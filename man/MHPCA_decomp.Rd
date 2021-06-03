@@ -6,32 +6,32 @@
 \usage{
 MHPCA_decomp(
   data,
-  maxiter,
-  epsilon,
   fve_cutoff,
   nknots,
+  maxiter = 1000,
+  epsilon = 0.001,
   reduce = TRUE,
   quiet = FALSE
 )
 }
 \arguments{
 \item{data}{dataframe in long format with six labeled columns
-(Observation: (character vector),
+(Repetition: (character vector),
 Subject: subject IDs (character vector),
 Group: subject group (character vector),
 func: functional argument (numeric vector),
 reg: regional argument (character vector),
 y: region-referenced functional data (numeric vector))
 and row length equal to the length of the vectorized region-referenced
-observations across all subjects and groups}
-
-\item{maxiter}{maximum number of iterations for MM algorithm (scalar)}
-
-\item{epsilon}{epsilon value for determining log-likelihood convergence (scalar)}
+Repetitions across all subjects and groups}
 
 \item{fve_cutoff}{fraction of variance cutoff for reducing the number of product components used in the mixed effects model (scalar in (0, 1))}
 
 \item{nknots}{number of knots to use for smoothing splines}
+
+\item{maxiter}{maximum number of iterations for MM algorithm (scalar)}
+
+\item{epsilon}{epsilon value for determining log-likelihood convergence (scalar)}
 
 \item{reduce}{should the number of product components be reduced and the mixed effects model re-estimated (logical)}
 

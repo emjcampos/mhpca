@@ -186,3 +186,4 @@ data.frame(MHPCA$marg$within$functional$`Group 2`$eigendecomp$vectors[, 1:2]) %>
   )
 ```
 
+### Performing Bootstrapped Tests 
