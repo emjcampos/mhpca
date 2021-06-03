@@ -6,18 +6,18 @@
 #'  subject-specific scores, variance components, and measurement error
 #'  variance.
 #' @param data dataframe in long format with six labeled columns
-#'  (Observation: (character vector),
+#'  (Repetition: (character vector),
 #'  Subject: subject IDs (character vector),
 #'  Group: subject group (character vector),
 #'  func: functional argument (numeric vector),
 #'  reg: regional argument (character vector),
 #'  y: region-referenced functional data (numeric vector))
 #'  and row length equal to the length of the vectorized region-referenced
-#'  observations across all subjects and groups
-#' @param maxiter maximum number of iterations for MM algorithm (scalar)
-#' @param epsilon epsilon value for determining log-likelihood convergence (scalar)
+#'  Repetitions across all subjects and groups
 #' @param fve_cutoff fraction of variance cutoff for reducing the number of product components used in the mixed effects model (scalar in (0, 1))
 #' @param nknots number of knots to use for smoothing splines
+#' @param maxiter maximum number of iterations for MM algorithm (scalar)
+#' @param epsilon epsilon value for determining log-likelihood convergence (scalar)
 #' @param reduce should the number of product components be reduced and the mixed effects model re-estimated (logical)
 #' @param quiet display messages for timing (logical)
 #'
@@ -56,13 +56,13 @@
 #' @importFrom tidyr spread
 #' @importFrom tidyselect peek_vars
 MHPCA_decomp <- function(
-  data, maxiter, epsilon, fve_cutoff, nknots, reduce = TRUE, quiet = FALSE
+  data, fve_cutoff, nknots, maxiter = 1000, epsilon = 1e-3, reduce = TRUE, quiet = FALSE
 ) {
 
   # to avoid issues with non-standard evaluation in tidyeval, set "global
   # variables" to NULL and remove them. this won't cause an issue with the rest
   # of the code.
-  Observation  <- NULL
+  Repetition  <- NULL
   Group        <- NULL
   Subject      <- NULL
   reg          <- NULL
@@ -79,14 +79,15 @@ MHPCA_decomp <- function(
   y_centered2  <- NULL
   r            <- NULL
   r_prime      <- NULL
+  t1           <- NULL
   t_prime      <- NULL
   covar        <- NULL
   y            <- NULL
 
   rm(list = c(
-    "Observation", "Group", "Subject", "reg", "func", "func_ind", "reg_ind",
+    "Repetition", "Group", "Subject", "reg", "func", "func_ind", "reg_ind",
     "index", "overall", "Overall_Mean", "y_centered", "eta", "row_ind",
-    "rt_ind", "y_centered2", "r", "r_prime", "t_prime", "covar", "y"
+    "rt_ind", "y_centered2", "r", "r_prime", "t1", "t_prime", "covar", "y"
   ))
 
   tictoc::tic("MHPCA Decomposition and Estimation")
@@ -98,7 +99,7 @@ MHPCA_decomp <- function(
 
   # convert to data.table and arrange
   data <- data.table::data.table(data)
-  data <- data[order(Observation, Group, Subject, reg, func)]
+  data <- data[order(Repetition, Group, Subject, reg, func)]
 
 
   # define global variables
@@ -111,7 +112,7 @@ MHPCA_decomp <- function(
   functional        <- unique(data$func)
   f_tot             <- length(functional)      # total grid pts functional dom
   r_tot             <- length(regional)        # total grid pts regional dom
-  obs               <- unique(data$Observation)  # obs
+  obs               <- unique(data$Repetition)  # obs
   names(obs)        <- obs              # name obs
   j_tot             <- length(obs)      # total number of obs
 
@@ -140,16 +141,22 @@ MHPCA_decomp <- function(
     groups,
     function(d) {
       dat <- dplyr::filter(data, Group == d)
-      spline_fit <- stats::smooth.spline(x = dat$func, y = dat$y, nknots = nknots)
+      spline_fit <- stats::smooth.spline(
+        x = dat$func,
+        y = dat$y,
+        nknots = nknots
+      )
       group_mean <- stats::predict(spline_fit, functional)$y
     }
   ) %>%
-    dplyr::mutate(overall = Matrix::rowMeans(dplyr::select(., dplyr::all_of(groups)))) %>%
+    dplyr::mutate(
+      overall = Matrix::rowMeans(dplyr::select(., dplyr::all_of(groups)))
+    ) %>%
     dplyr::pull(overall)
 
   # center data by overall mean function
   data <- data %>%
-    dplyr::group_by(Subject, Group, reg, Observation) %>%
+    dplyr::group_by(Subject, Group, reg, Repetition) %>%
     dplyr::mutate(
       Overall_Mean = MHPCA[["mu"]],
       y_centered = y - Overall_Mean
@@ -167,12 +174,16 @@ MHPCA_decomp <- function(
     stringsAsFactors = FALSE
   ) %>% purrr::pmap_dfr(
     function(d, j, r) {
-      dat <- dplyr::filter(data, Group == d, reg == r, Observation == j)
-      spline_fit <- stats::smooth.spline(dat$func, dat$y_centered, nknots = nknots)
+      dat <- dplyr::filter(data, Group == d, reg == r, Repetition == j)
+      spline_fit <- stats::smooth.spline(
+        dat$func,
+        dat$y_centered,
+        nknots = nknots
+      )
       data.frame(
         Group = d,
         reg = r,
-        Observation = j,
+        Repetition = j,
         func = functional,
         eta = stats::predict(spline_fit, functional)$y,
         stringsAsFactors = FALSE
@@ -183,7 +194,7 @@ MHPCA_decomp <- function(
   data <- dplyr::full_join(
     data,
     MHPCA$eta,
-    by = c("Observation", "Group", "reg", "func")
+    by = c("Repetition", "Group", "reg", "func")
   ) %>%
     dplyr::mutate(y_centered2 = y_centered - eta)
 
@@ -215,7 +226,7 @@ MHPCA_decomp <- function(
 
       # assign an index to the columns of the marginal design matrix
       data[, row_ind := ((match(Subject, group_subj) - 1) +
-                           lid * (match(Observation, obs) - 1) + 1)]
+                           lid * (match(Repetition, obs) - 1) + 1)]
       data[, rt_ind := ((func_ind - 1) + f_tot * (reg_ind - 1) + 1)]
 
       # form sparse marginal design matrix
@@ -261,15 +272,15 @@ MHPCA_decomp <- function(
 
       for (j1 in 1:j_tot) {
         sparse_mats[[j1]] = Matrix::sparseMatrix(
-          i = data[which(data$Observation == obs[j1]), row_ind],
-          j = data[which(data$Observation == obs[j1]), rt_ind],
-          x = data[which(data$Observation == obs[j1]), y_centered2],
+          i = data[which(data$Repetition == obs[j1]), row_ind],
+          j = data[which(data$Repetition == obs[j1]), rt_ind],
+          x = data[which(data$Repetition == obs[j1]), y_centered2],
           dims = c(lid, r_tot * f_tot)
         )
 
         sparse_mat_inds[[j1]] = Matrix::sparseMatrix(
-          i = data[which(data$Observation == obs[j1]), row_ind],
-          j = data[which(data$Observation == obs[j1]), rt_ind],
+          i = data[which(data$Repetition == obs[j1]), row_ind],
+          j = data[which(data$Repetition == obs[j1]), rt_ind],
           x = 1,
           dims = c(lid, r_tot * f_tot)
         )
@@ -304,19 +315,19 @@ MHPCA_decomp <- function(
   ) {
 
     cov_mat <- expand.grid(
-      t = functional,
+      t1 = functional,
       r = regional,
       t_prime = functional,
       r_prime = regional
     ) %>%
-      dplyr::select(r, t, r_prime, t_prime) %>%
+      dplyr::select(r, t1, r_prime, t_prime) %>%
       dplyr::mutate(covar = as.vector(MHPCA$covar[[which.cov]][[d]]))
 
     if (smooth == TRUE) {
 
       cov_mat <- cov_mat %>%
         dplyr::filter(r == r_prime) %>%
-        dplyr::group_by(t, t_prime) %>%
+        dplyr::group_by(t1, t_prime) %>%
         dplyr::summarise(covar = mean(covar), .groups = "drop_last") %>%
         dplyr::ungroup()
 
@@ -325,20 +336,23 @@ MHPCA_decomp <- function(
         dplyr::filter(stats::complete.cases(.))
 
       if (which.cov == "within") {
-        cov_vec_d <- dplyr::filter(cov_vec_d, t != t_prime)
+        cov_vec_d <- dplyr::filter(cov_vec_d, t1 != t_prime)
       }
 
       # smooth the pooled sample covariances
       cov_vec_s <- mgcv::gam(
-        covar ~ mgcv::te(t, t_prime, k = nknots, bs = "ps"),
+        covar ~ te(t1, t_prime, k = nknots, bs = "ps"),
         data = cov_vec_d
       )
 
       # form 2D grid to predict covariance function
-      newdata <- dplyr::select(cov_mat, t, t_prime)
+      newdata <- dplyr::select(cov_mat, t1, t_prime)
 
       # estimated marginal covariance function
-      cov_mat_s <- matrix(stats::predict(cov_vec_s, newdata = newdata), nrow = f_tot)
+      cov_mat_s <- matrix(
+        stats::predict(cov_vec_s, newdata = newdata),
+        nrow = f_tot
+      )
 
       # symmetrize covariance function
       cov_mat_s <- (cov_mat_s + t(cov_mat_s)) / 2
@@ -346,11 +360,11 @@ MHPCA_decomp <- function(
       if (which.cov == "within") {
         # calculate measurement error variance
         # extract diagonal entries from pooled sample covariance
-        marg_diag <- cov_mat[which(cov_mat$t == cov_mat$t_prime), ] %>%
+        marg_diag <- cov_mat[which(cov_mat$t1 == cov_mat$t_prime), ] %>%
           as.matrix()
 
         loess_diag <- suppressWarnings(fANCOVA::loess.as(
-          marg_diag[, "t"],
+          marg_diag[, "t1"],
           marg_diag[, "covar"],
           degree = 1,
           criterion = "gcv",
@@ -358,7 +372,8 @@ MHPCA_decomp <- function(
           plot = FALSE
         ))
 
-        sigma_2 <- abs(mean(stats::predict(loess_diag, functional) - diag(cov_mat_s)))
+        sigma_2 <- abs(mean(stats::predict(loess_diag, functional) -
+                              diag(cov_mat_s)))
 
         return(list(
           "sigma_hat" = cov_mat,
@@ -375,7 +390,7 @@ MHPCA_decomp <- function(
     } else {
 
       cov_mat <- cov_mat %>%
-        dplyr::filter(t == t_prime) %>%
+        dplyr::filter(t1 == t_prime) %>%
         dplyr::group_by(r, r_prime) %>%
         dplyr::summarise(covar = mean(covar), .groups = "drop_last") %>%
         dplyr::ungroup() %>%
@@ -643,7 +658,7 @@ MHPCA_decomp <- function(
       groups,
       function(d) {
         dplyr::select(
-          MHPCA$data[[d]], Observation, Group, Subject, reg, func,
+          MHPCA$data[[d]], Repetition, Group, Subject, reg, func,
           y, func_ind, reg_ind, index, Overall_Mean, eta, y_centered2,
           dplyr::all_of(keep_between[[d]]), dplyr::all_of(keep_within[[d]])
         )
