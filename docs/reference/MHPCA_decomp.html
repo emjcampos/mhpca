@@ -124,10 +124,10 @@ variance.</p>
 
     <pre class="usage"><span class='fu'>MHPCA_decomp</span><span class='op'>(</span>
   <span class='va'>data</span>,
-  <span class='va'>maxiter</span>,
-  <span class='va'>epsilon</span>,
   <span class='va'>fve_cutoff</span>,
   <span class='va'>nknots</span>,
+  maxiter <span class='op'>=</span> <span class='fl'>1000</span>,
+  epsilon <span class='op'>=</span> <span class='fl'>0.001</span>,
   reduce <span class='op'>=</span> <span class='cn'>TRUE</span>,
   quiet <span class='op'>=</span> <span class='cn'>FALSE</span>
 <span class='op'>)</span></pre>
@@ -138,22 +138,14 @@ variance.</p>
     <tr>
       <th>data</th>
       <td><p>dataframe in long format with six labeled columns
-(Observation: (character vector),
+(Repetition: (character vector),
 Subject: subject IDs (character vector),
 Group: subject group (character vector),
 func: functional argument (numeric vector),
 reg: regional argument (character vector),
 y: region-referenced functional data (numeric vector))
 and row length equal to the length of the vectorized region-referenced
-observations across all subjects and groups</p></td>
-    </tr>
-    <tr>
-      <th>maxiter</th>
-      <td><p>maximum number of iterations for MM algorithm (scalar)</p></td>
-    </tr>
-    <tr>
-      <th>epsilon</th>
-      <td><p>epsilon value for determining log-likelihood convergence (scalar)</p></td>
+Repetitions across all subjects and groups</p></td>
     </tr>
     <tr>
       <th>fve_cutoff</th>
@@ -162,6 +154,14 @@ observations across all subjects and groups</p></td>
     <tr>
       <th>nknots</th>
       <td><p>number of knots to use for smoothing splines</p></td>
+    </tr>
+    <tr>
+      <th>maxiter</th>
+      <td><p>maximum number of iterations for MM algorithm (scalar)</p></td>
+    </tr>
+    <tr>
+      <th>epsilon</th>
+      <td><p>epsilon value for determining log-likelihood convergence (scalar)</p></td>
     </tr>
     <tr>
       <th>reduce</th>
