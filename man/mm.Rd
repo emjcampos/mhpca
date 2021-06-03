@@ -4,7 +4,7 @@
 \alias{mm}
 \title{MM Algorithm for M-HPCA}
 \usage{
-mm(MHPCA, group, maxiter, epsilon, j_tot)
+mm(MHPCA, group, maxiter = 1000, epsilon = 1e-06, j_tot)
 }
 \arguments{
 \item{MHPCA}{MHPCA object}
