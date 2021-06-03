@@ -1,66 +1,75 @@
+---
+output: github_document
+---
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse  = TRUE,
+  comment   = "#>",
+  fig.path  = "man/figures/README-",
+  out.width = "60%", 
+  # fig.align = "center", 
+  fig.show   = "hold", 
+  message   = FALSE
+)
+
+library(tidyverse)
+library(latex2exp)
+ggplot2::theme_set(
+  theme_bw() + 
+    theme(
+      legend.position = "bottom", 
+      panel.grid.major = element_blank(), 
+      panel.grid.minor = element_blank(), 
+      plot.title = element_text(size = 10, hjust = 0.5)
+    )
+)
+
+library(here) 
+load(here("man", "data", "README-data.RData"))
+```
 
 # mhpca
 
 <!-- badges: start -->
 <!-- badges: end -->
 
-The `mhpca` package is a tool for conducting Multilevel Hybrid Principal
-Component Analysis (M-HPCA) proposed in Campos et al. (202?). This
-package contains the functions necessary to estimate the marginal
-eigenfunctions, eigenvectors, and product eigencomponents as well as the
-tools for performing inference.
+The `mhpca` package is a tool for conducting Multilevel Hybrid Principal Component Analysis (M-HPCA) proposed in Campos et al. (202?). This package contains the functions necessary to estimate the marginal eigenfunctions, eigenvectors, and product eigencomponents as well as the tools for performing inference.
 
 ## Installation
 
-You can install the development version from
-[GitHub](https://github.com/) with:
+You can install the development version from [GitHub](https://github.com/) with:
 
 ``` r
 # install.packages("devtools")
 devtools::install_github("emjcampos/mhpca")
 ```
-
 ## Example
 
-Begin by loading the `mhpca` package.
+Begin by loading the `mhpca` package. 
 
-``` r
+```{r}
 library(mhpca) 
 ```
 
-The data must be in the following form, with columns labeled
-`Repetition`, `Group`, `Subject`, `reg`, `func`, and `y`.
-
-``` r
+The data must be in the following form, with columns labeled `Repetition`, `Group`, `Subject`, `reg`, `func`, and `y`.
+```{r}
 head(data)
-#>     Repetition   Group    Subject reg       func        y
-#> 1 Repetition 1 Group 1 Subject 01 E01 0.00000000 2.220561
-#> 2 Repetition 1 Group 1 Subject 01 E01 0.02040816 2.373132
-#> 3 Repetition 1 Group 1 Subject 01 E01 0.04081633 1.827891
-#> 4 Repetition 1 Group 1 Subject 01 E01 0.06122449 2.443057
-#> 5 Repetition 1 Group 1 Subject 01 E01 0.08163265 1.583508
-#> 6 Repetition 1 Group 1 Subject 01 E01 0.10204082 1.705329
 ```
 
-Using the `MHPCA_decomp` function, you can estimate the model
-components.
-
-``` r
+Using the `MHPCA_decomp` function, you can estimate the model components.
+```{r, eval = FALSE}
 MHPCA = MHPCA_decomp(data, fve_cutoff = 0.8, nknots = 5)
 ```
 
-All of the components can then be plotted and inspected.
-
-``` r
+All of the components can then be plotted and inspected. 
+```{r, fig.align = "center"}
 ggplot(data.frame(func = unique(data$func), mu = MHPCA$mu)) + 
   geom_line(aes(x = func, y = mu))
 ```
-
-<img src="man/figures/README-unnamed-chunk-5-1.png" width="60%" style="display: block; margin: auto;" />
-
-``` r
+```{r, fig.align = "center"}
 ggplot(MHPCA$eta) + 
   geom_line(aes(
     x = func, y = eta, 
@@ -70,9 +79,8 @@ ggplot(MHPCA$eta) +
   ))
 ```
 
-<img src="man/figures/README-unnamed-chunk-6-1.png" width="60%" style="display: block; margin: auto;" />
 
-``` r
+```{r, out.width = "45%"}
 data.frame(MHPCA$marg$between$regional$`Group 1`$eigendecomp$vectors[, 1:2]) %>% 
   mutate(reg = unique(data$reg)) %>% 
   pivot_longer(X1:X2, names_to = "v") %>% 
@@ -98,9 +106,7 @@ data.frame(MHPCA$marg$between$regional$`Group 2`$eigendecomp$vectors[, 1:2]) %>%
   )
 ```
 
-<img src="man/figures/README-unnamed-chunk-7-1.png" width="45%" /><img src="man/figures/README-unnamed-chunk-7-2.png" width="45%" />
-
-``` r
+```{r, out.width = "45%"}
 data.frame(MHPCA$marg$within$regional$`Group 1`$eigendecomp$vectors[, 1:2]) %>% 
   mutate(reg = unique(data$reg)) %>% 
   pivot_longer(X1:X2, names_to = "v") %>% 
@@ -126,9 +132,9 @@ data.frame(MHPCA$marg$within$regional$`Group 2`$eigendecomp$vectors[, 1:2]) %>%
   )
 ```
 
-<img src="man/figures/README-unnamed-chunk-8-1.png" width="45%" /><img src="man/figures/README-unnamed-chunk-8-2.png" width="45%" />
 
-``` r
+
+```{r, out.width = "45%"}
 data.frame(MHPCA$marg$between$functional$`Group 1`$eigendecomp$vectors[, 1:2]) %>% 
   mutate(func = unique(data$func)) %>% 
   pivot_longer(X1:X2, names_to = "phi") %>% 
@@ -154,9 +160,7 @@ data.frame(MHPCA$marg$between$functional$`Group 2`$eigendecomp$vectors[, 1:2]) %
   )
 ```
 
-<img src="man/figures/README-unnamed-chunk-9-1.png" width="45%" /><img src="man/figures/README-unnamed-chunk-9-2.png" width="45%" />
-
-``` r
+```{r, out.width = "45%"}
 data.frame(MHPCA$marg$within$functional$`Group 1`$eigendecomp$vectors[, 1:2]) %>% 
   mutate(func = unique(data$func)) %>% 
   pivot_longer(X1:X2, names_to = "phi") %>% 
@@ -182,4 +186,3 @@ data.frame(MHPCA$marg$within$functional$`Group 2`$eigendecomp$vectors[, 1:2]) %>
   )
 ```
 
-<img src="man/figures/README-unnamed-chunk-10-1.png" width="45%" /><img src="man/figures/README-unnamed-chunk-10-2.png" width="45%" />
