@@ -213,7 +213,7 @@ MHPCA_simulation <- function(
 
       # create subject trajectory + random noise
       data <- data.frame(
-        Observation = paste("Repetition", rep(j, length(func))),
+        Repetition = paste("Repetition", rep(j, length(func))),
         Group = paste("Group", rep(d, length(func))),
         Subject = paste(
           "Subject",
@@ -241,7 +241,7 @@ MHPCA_simulation <- function(
         dplyr::rename(y = y_noise)
     })
 
-  obs <- unique(data$Observation)
+  obs <- unique(data$Repetition)
 
   SNR <- mean(data$SNR)
   data <- dplyr::select(data, -SNR)
@@ -266,7 +266,7 @@ MHPCA_simulation <- function(
         data = data[
           -which(
             data$Subject == i &
-              data$Observation %in% obs[as.logical(level_logical[i, ])]),
+              data$Repetition %in% obs[as.logical(level_logical[i, ])]),
         ]
       }
     }
@@ -516,7 +516,7 @@ MHPCA_simulation_within_group_test <- function(
 
       # create subject trajectory + random noise
       data <- data.frame(
-        Observation = paste("Repetition", rep(j, length(func))),
+        Repetition = paste("Repetition", rep(j, length(func))),
         Group = paste("Group", rep(d, length(func))),
         Subject = paste(
           "Subject",
@@ -544,7 +544,7 @@ MHPCA_simulation_within_group_test <- function(
         dplyr::rename(y = y_noise)
     })
 
-  obs <- unique(data$Observation)
+  obs <- unique(data$Repetition)
 
   SNR <- mean(data$SNR)
   data <- dplyr::select(data, -SNR)
@@ -568,7 +568,7 @@ MHPCA_simulation_within_group_test <- function(
       if (sum(level_logical[i, ]) > 0) {
         data = data[-which(
           data$Subject == i &
-            data$Observation %in% obs[as.logical(level_logical[i, ])]
+            data$Repetition %in% obs[as.logical(level_logical[i, ])]
         ), ]
       }
     }

@@ -10,7 +10,7 @@ if (getRversion() >= "2.15.1")  utils::globalVariables(c("."))
 #' @param j_tot total repetitions
 #'
 #'
-mm = function(MHPCA, group, maxiter, epsilon, j_tot) {
+mm = function(MHPCA, group, maxiter = 1000, epsilon = 1e-6, j_tot) {
 
   subjects        = unique(MHPCA$data[[group]]$Subject)
   names(subjects) = subjects
@@ -19,7 +19,7 @@ mm = function(MHPCA, group, maxiter, epsilon, j_tot) {
   complete = purrr::map(
     subjects,
     ~ MHPCA$data[[group]][MHPCA$data[[group]]$Subject == subjects[.x], ] %>%
-      dplyr::pull(Observation) %>% unique()
+      dplyr::pull(Repetition) %>% unique()
   ) %>%
     purrr::map_dbl(~ length(unique(.x)) == j_tot) %>%
     sum() == length(subjects)
@@ -49,7 +49,7 @@ mm_complete = function(MHPCA, group, maxiter, epsilon) {
   names(subjects) = subjects
 
   # store the number of obs, regions, and timepoints
-  obs        = unique(MHPCA$data[[group]]$Observation)
+  obs        = unique(MHPCA$data[[group]]$Repetition)
   names(obs) = obs
   J          = length(obs)
   r_tot      = length(unique(MHPCA$data[[group]]$reg))
@@ -57,9 +57,13 @@ mm_complete = function(MHPCA, group, maxiter, epsilon) {
   TR         = f_tot * r_tot
   TRJ        = TR * J
 
-  n  = length(subjects)
-  G  = MHPCA$data[[group]] %>% dplyr::select(dplyr::starts_with("between")) %>% ncol()
-  H  = MHPCA$data[[group]] %>% dplyr::select(dplyr::starts_with("within")) %>% ncol()
+  n = length(subjects)
+  G = MHPCA$data[[group]] %>%
+    dplyr::select(dplyr::starts_with("between")) %>%
+    ncol()
+  H = MHPCA$data[[group]] %>%
+    dplyr::select(dplyr::starts_with("within")) %>%
+    ncol()
   HJ = J * H
 
   # create identity and ones matrices for kronecker products
@@ -70,16 +74,16 @@ mm_complete = function(MHPCA, group, maxiter, epsilon) {
   I_HJ   = Matrix::Diagonal(HJ, 1)
   I_G    = Matrix::Diagonal(G, 1)
 
-  y_i = purrr::map(
-    subjects,
-    ~ MHPCA$data[[group]][MHPCA$data[[group]]$Subject == subjects[.x], ] %>%
-      dplyr::pull(y_centered2)
-  )
+  y_i = MHPCA$data[[group]] %>%
+    split(.$Subject) %>%
+    map(~ pull(.x, y_centered2))
 
   Phi1 = MHPCA$data[[group]] %>%
     dplyr::select(dplyr::starts_with("between")) %>%
     dplyr::slice(1:TR) %>%
     as.matrix(dimnames = list(names(.), NULL))
+
+  level1_names = colnames(Phi1)
 
   z_i = Matrix::kronecker(one_J, Phi1)
 
@@ -87,6 +91,8 @@ mm_complete = function(MHPCA, group, maxiter, epsilon) {
     dplyr::select(dplyr::starts_with("within")) %>%
     dplyr::slice(1:TR) %>%
     as.matrix(dimnames = list(names(.), NULL))
+
+  level2_names = colnames(Phi2)
 
   Phi2t = Matrix::t(Phi2)
 
@@ -130,11 +136,11 @@ mm_complete = function(MHPCA, group, maxiter, epsilon) {
   omega_inv = Matrix::kronecker(I_J, Q) - Matrix::kronecker(ones_J, temp)
 
   omegainv_y    = vector(mode = "list", length = n)
-  yt_omegainv_y = vector(mode = "list", length = n)
+  yt_omegainv_y = vector(length = n)
 
   for (i in 1:n) {
     omegainv_y[[i]] = omega_inv %*% y_i[[i]]
-    yt_omegainv_y[[i]] = Matrix::crossprod(y_i[[i]], omegainv_y[[i]])
+    yt_omegainv_y[i] = as.numeric(Matrix::crossprod(y_i[[i]], omegainv_y[[i]]))
   }
 
   loglik_vec[1] = loglik_calc_complete(
@@ -153,12 +159,13 @@ mm_complete = function(MHPCA, group, maxiter, epsilon) {
 
     y_sum = 0
 
+    Lambda1_Zt    = Matrix::tcrossprod(Lambda1[[k]], z_i)
+    Lambda2_Phi2t = Matrix::kronecker(I_J, Matrix::tcrossprod(Lambda2[[k]], Phi2))
     for (i in 1:n) {
-      zeta_i[[k]][[i]] = Lambda1[[k]] %*% Matrix::crossprod(z_i, omegainv_y[[i]])
-      rownames(zeta_i[[k]][[i]]) = colnames(Phi1)
-      xi_i[[k]][[i]]   = Matrix::kronecker(I_J, Lambda2[[k]])
-      xi_i[[k]][[i]]   = xi_i[[k]][[i]] %*% Matrix::crossprod(w_i, omegainv_y[[i]])
-      rownames(xi_i[[k]][[i]]) = rep(colnames(Phi2), each = J)
+      zeta_i[[k]][[i]] = Lambda1_Zt %*% omegainv_y[[i]]
+      xi_i[[k]][[i]]   = Lambda2_Phi2t %*% omegainv_y[[i]]
+      rownames(zeta_i[[k]][[i]]) = level1_names
+      rownames(xi_i[[k]][[i]])   = rep(level2_names, each = J)
       y_sum = y_sum + Matrix::crossprod(omegainv_y[[i]])
     }
 
@@ -184,10 +191,10 @@ mm_complete = function(MHPCA, group, maxiter, epsilon) {
     for (h in 1:H) {
       gamma_sum = 0
       xi_sum    = 0
-      for (i in 1:n) {
-        for (j in 1:J) {
-          index = h + (j - 1) * H
-          gamma_sum = gamma_sum + B[index, index]
+      for (j in 1:J) {
+        index = h + (j - 1) * H
+        gamma_sum = gamma_sum + n * B[index, index]
+        for (i in 1:n) {
           xi_sum = xi_sum + xi_i[[k]][[i]][index] ^ 2
         }
       }
@@ -214,10 +221,10 @@ mm_complete = function(MHPCA, group, maxiter, epsilon) {
     omega_inv = Matrix::kronecker(I_J, Q) - Matrix::kronecker(ones_J, temp)
 
     omegainv_y    = vector(mode = "list", length = n)
-    yt_omegainv_y = vector(mode = "list", length = n)
+    yt_omegainv_y = vector(length = n)
     for (i in 1:n) {
       omegainv_y[[i]] = omega_inv %*% y_i[[i]]
-      yt_omegainv_y[[i]] = Matrix::crossprod(y_i[[i]], omegainv_y[[i]])
+      yt_omegainv_y[i] = as.numeric(Matrix::crossprod(y_i[[i]], omegainv_y[[i]]))
     }
 
     loglik_vec[k + 1] = loglik_calc_complete(
@@ -282,8 +289,8 @@ loglik_calc_complete = function(
   logdet_level2_arg = I_HJ + 1 / sigma2 * FWtWF
   logdet_level2 = Matrix::determinant(logdet_level2_arg, logarithm = TRUE)$modulus
   logdet_level1 = Matrix::determinant(middle_inv, logarithm = TRUE)$modulus
-  sum_yt_omegainv_y = purrr::map_dbl(yt_omegainv_y, ~ as.numeric(.x)) %>%
-    sum()
+  sum_yt_omegainv_y = sum(yt_omegainv_y)
+
   loglik = -n / 2 * (TRJ * log(sigma2) + logdet_level2 + logdet_level1 + sum_yt_omegainv_y)
 
   return(loglik)
@@ -311,9 +318,9 @@ mm_incomplete = function(MHPCA, group, maxiter, epsilon) {
   # to avoid issues with non-standard evaluation in tidyeval, set "global
   # variables" to NULL and remove them. this won't cause an issue with the rest
   # of the code.
-  Observation <- NULL
+  Repetition <- NULL
 
-  rm(list = c("Observation"))
+  rm(list = c("Repetition"))
 
 
   # inputs ----
@@ -321,7 +328,7 @@ mm_incomplete = function(MHPCA, group, maxiter, epsilon) {
   names(subjects) = subjects
 
   # store the number of obs, regions, and timepoints
-  obs        = unique(MHPCA$data[[group]]$Observation)
+  obs        = unique(MHPCA$data[[group]]$Repetition)
   names(obs) = obs
   J          = length(obs)
   r_tot      = length(unique(MHPCA$data[[group]]$reg))
@@ -355,13 +362,13 @@ mm_incomplete = function(MHPCA, group, maxiter, epsilon) {
   j_i = purrr::map(
     subjects,
     ~ MHPCA$data[[group]][MHPCA$data[[group]]$Subject == subjects[.x], ] %>%
-      dplyr::pull(Observation) %>% unique()
+      dplyr::pull(Repetition) %>% unique()
   )
 
   length_j_i = purrr::map(
     subjects,
     ~ MHPCA$data[[group]][MHPCA$data[[group]]$Subject == subjects[.x], ] %>%
-      dplyr::pull(Observation) %>% unique() %>% length()
+      dplyr::pull(Repetition) %>% unique() %>% length()
   )
 
   Phi1 = MHPCA$data[[group]] %>%
@@ -371,7 +378,7 @@ mm_incomplete = function(MHPCA, group, maxiter, epsilon) {
 
   z = Matrix::kronecker(rep(1, J), Phi1) %>%
     data.frame() %>%
-    dplyr::mutate(Observation = rep(obs, each = TR))
+    dplyr::mutate(Repetition = rep(obs, each = TR))
 
   Phi2 = MHPCA$data[[group]] %>%
     dplyr::select(dplyr::starts_with("within")) %>%
@@ -383,7 +390,7 @@ mm_incomplete = function(MHPCA, group, maxiter, epsilon) {
   w = Matrix::kronecker(I_J[[J]], Phi2) %>%
     as.matrix() %>%
     data.frame() %>%
-    dplyr::mutate(Observation = rep(obs, each = TR))
+    dplyr::mutate(Repetition = rep(obs, each = TR))
 
   # storage ----
   sigma2     = rep(NA_real_, maxiter + 1)
@@ -438,10 +445,10 @@ mm_incomplete = function(MHPCA, group, maxiter, epsilon) {
   }
 
   for (i in subjects) {
-    z_i[[i]] = dplyr::filter(z, Observation %in% j_i[[i]]) %>%
-      dplyr::select(-Observation) %>% as.matrix() %>% Matrix::Matrix()
-    w_i[[i]] = dplyr::filter(w, Observation %in% j_i[[i]]) %>%
-      dplyr::select(-Observation) %>% as.matrix() %>% Matrix::Matrix()
+    z_i[[i]] = dplyr::filter(z, Repetition %in% j_i[[i]]) %>%
+      dplyr::select(-Repetition) %>% as.matrix() %>% Matrix::Matrix()
+    w_i[[i]] = dplyr::filter(w, Repetition %in% j_i[[i]]) %>%
+      dplyr::select(-Repetition) %>% as.matrix() %>% Matrix::Matrix()
 
     ztz[[i]] = length_j_i[[i]] * Matrix::crossprod(Phi1)
     wtw[[i]] = Matrix::kronecker(I_J[[length_j_i[[i]]]], Matrix::crossprod(Phi2))
