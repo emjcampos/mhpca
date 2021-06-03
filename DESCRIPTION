@@ -1,11 +1,11 @@
 Package: mhpca
 Title: Multilevel Hybrid Principal Components Analysis 
-Version: 0.0.0.9000
-Authors@R: c(person(given = "Emilie",
-                    family = "Campos",
-                    role = c("aut", "cre"),
-                    email = "ejcampos@ucla.edu"),
-              person("Damla", "Senturk", role = c("aut")))
+Version: 1.0.0
+Authors@R: c(
+    person(given = "Emilie", family = "Campos", role = c("aut", "cre"),
+           email = "ejcampos@ucla.edu"),
+    person("Damla", "Senturk", role = c("aut"))
+    )
 Description: What the package does (one paragraph).
 License: GPL (>= 3)
 Encoding: UTF-8
@@ -26,4 +26,10 @@ Imports:
     fANCOVA, 
     pracma, 
     tidyselect, 
-    stringr
+    stringr, 
+    furrr,
+    future
+Suggests: 
+    rmarkdown,
+    knitr
+VignetteBuilder: knitr
