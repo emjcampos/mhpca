@@ -54,13 +54,20 @@ The data must be in the following form, with columns labeled
 
 ``` r
 head(sim$data)
-#>     Repetition   Group    Subject reg       func y_nonoise       noise        y
-#> 1 Repetition 1 Group 1 Subject 01 E01 0.00000000  1.997063 -0.64808192 1.348981
-#> 2 Repetition 1 Group 1 Subject 01 E01 0.02040816  1.871797  0.32850054 2.200298
-#> 3 Repetition 1 Group 1 Subject 01 E01 0.04081633  1.751024 -0.15888575 1.592138
-#> 4 Repetition 1 Group 1 Subject 01 E01 0.06122449  1.634616 -0.10749471 1.527121
-#> 5 Repetition 1 Group 1 Subject 01 E01 0.08163265  1.522428 -0.04232958 1.480099
-#> 6 Repetition 1 Group 1 Subject 01 E01 0.10204082  1.414302  0.15305454 1.567357
+#>     Repetition   Group    Subject reg       func y_nonoise       noise
+#> 1 Repetition 1 Group 1 Subject 01 E01 0.00000000 1.4901930 -0.37896860
+#> 2 Repetition 1 Group 1 Subject 01 E01 0.02040816 1.3658750  0.07670852
+#> 3 Repetition 1 Group 1 Subject 01 E01 0.04081633 1.2479442 -0.50811750
+#> 4 Repetition 1 Group 1 Subject 01 E01 0.06122449 1.1362658  0.27482763
+#> 5 Repetition 1 Group 1 Subject 01 E01 0.08163265 1.0306834 -0.02199535
+#> 6 Repetition 1 Group 1 Subject 01 E01 0.10204082 0.9310203 -0.06845363
+#>           y
+#> 1 1.1112244
+#> 2 1.4425836
+#> 3 0.7398267
+#> 4 1.4110934
+#> 5 1.0086881
+#> 6 0.8625667
 ```
 
 Using the `MHPCA_decomp` function, you can estimate the model
@@ -77,27 +84,32 @@ MHPCA = MHPCA_decomp(
   quiet      = FALSE # display messages for timing 
 )
 #> 0. Data formatting: 0.016 sec elapsed
-#> 1. Estimation of Fixed Effects: 0.151 sec elapsed
+#> 1. Estimation of Fixed Effects: 0.158 sec elapsed
 #> 2. Estimation of Covariances
-#>     a. Raw Covariances: 0.183 sec elapsed
-#>     b,c. Estimation of Marginal Covariances and Smoothing: 0.667 sec elapsed
+#>     a. Raw Covariances: 0.209 sec elapsed
+#>     b,c. Estimation of Marginal Covariances and Smoothing: 0.684 sec elapsed
 #> 3. Estimation of Marginal Eigencomponents: 0.004 sec elapsed
 #> 4. Estimation of Variance Components
-#>     a. Fit big model: 4.019 sec elapsed
-#>     b. Choose number of components: 0.035 sec elapsed
-#>     c. Final Model: 5.172 sec elapsed
-#>     d. Prediction: 0.176 sec elapsed
-#> MHPCA Decomposition and Estimation: 10.424 sec elapsed
+#>     a. Fit big model: 4.229 sec elapsed
+#>     b. Choose number of components: 0.038 sec elapsed
+#>     c. Final Model: 5.612 sec elapsed
+#>     d. Prediction: 0.189 sec elapsed
+#> MHPCA Decomposition and Estimation: 11.141 sec elapsed
 ```
 
 All of the components can then be plotted and inspected.
 
 ``` r
 ggplot(data.frame(func = unique(sim$data$func), mu = MHPCA$mu)) + 
-  geom_line(aes(x = func, y = mu))
+  geom_line(aes(x = func, y = mu)) + 
+  labs(
+    x = TeX("$t$"), 
+    y = TeX("$\\mu(t)$"), 
+    linetype = element_blank()
+  ) 
 ```
 
-<img src="man/figures/README-unnamed-chunk-6-1.png" width="60%" style="display: block; margin: auto;" />
+<img src="man/figures/README-mean-function-1.png" width="60%" style="display: block; margin: auto;" />
 
 ``` r
 ggplot(MHPCA$eta) + 
@@ -106,122 +118,160 @@ ggplot(MHPCA$eta) +
     color = Group, 
     linetype = Repetition, 
     group = interaction(Group, Repetition, reg)
-  ))
+  )) + 
+  labs(
+    y = TeX("$\\eta_{dj}(r, t)$"), 
+    x = TeX("$t$"), 
+    linetype = element_blank(), 
+    color = element_blank()
+  )
 ```
 
-<img src="man/figures/README-unnamed-chunk-7-1.png" width="60%" style="display: block; margin: auto;" />
+<img src="man/figures/README-eta-functions-1.png" width="60%" style="display: block; margin: auto;" />
 
 ``` r
-data.frame(MHPCA$marg$between$regional$`Group 1`$eigendecomp$vectors[, 1:2]) %>%
-  mutate(reg = unique(sim$data$reg)) %>% 
-  pivot_longer(X1:X2, names_to = "v") %>% 
-  ggplot() + 
-  geom_tile(aes(x = reg, fill = value, y = v)) + 
-  labs(
-    x = "Region, r", 
-    y = element_blank(), 
-    fill = TeX("$v^{(1)}_{1k}(r)$"), 
-    title = "Group 1, Level 1 Eigenvectors"
-  )
-
-data.frame(MHPCA$marg$between$regional$`Group 2`$eigendecomp$vectors[, 1:2]) %>%
-  mutate(reg = unique(sim$data$reg)) %>% 
-  pivot_longer(X1:X2, names_to = "v") %>% 
-  ggplot() + 
-  geom_tile(aes(x = reg, fill = value, y = v)) + 
-  labs(
-    x = "Region, r", 
-    y = element_blank(), 
-    fill = TeX("$v^{(1)}_{2k}(r)$"), 
-    title = "Group 2, Level 1 Eigenvectors"
-  )
+cowplot::plot_grid(
+  data.frame(MHPCA$marg$between$regional$`Group 1`$eigendecomp$vectors[, 1:2]) %>%
+    mutate(reg = unique(sim$data$reg)) %>% 
+    pivot_longer(X1:X2, names_to = "v") %>% 
+    ggplot() + 
+    geom_tile(aes(x = reg, fill = value, y = v)) + 
+    scale_fill_distiller(palette = "RdBu") + 
+    labs(
+      x = "Region, r", 
+      y = element_blank(), 
+      fill = TeX("$v^{(1)}_{1k}(r)$"), 
+      title = "Group 1, Level 1 Eigenvectors"
+    ),
+  data.frame(MHPCA$marg$between$regional$`Group 2`$eigendecomp$vectors[, 1:2]) %>%
+    mutate(reg = unique(sim$data$reg)) %>% 
+    pivot_longer(X1:X2, names_to = "v") %>% 
+    ggplot() + 
+    geom_tile(aes(x = reg, fill = value, y = v)) + 
+    scale_fill_distiller(palette = "RdBu") + 
+    labs(
+      x = "Region, r", 
+      y = element_blank(), 
+      fill = TeX("$v^{(1)}_{2k}(r)$"), 
+      title = "Group 2, Level 1 Eigenvectors"
+    ), 
+  ncol = 2, 
+  labels = c("(a)", "(b)"), 
+  hjust = 0.01,
+  align = "hv", 
+  axis = "btlr"
+)
 ```
 
-<img src="man/figures/README-unnamed-chunk-8-1.png" width="45%" /><img src="man/figures/README-unnamed-chunk-8-2.png" width="45%" />
+<img src="man/figures/README-level-1-eigenvectors-1.png" style="display: block; margin: auto;" />
 
 ``` r
-data.frame(MHPCA$marg$within$regional$`Group 1`$eigendecomp$vectors[, 1:2]) %>% 
-  mutate(reg = unique(sim$data$reg)) %>% 
-  pivot_longer(X1:X2, names_to = "v") %>% 
-  ggplot() + 
-  geom_tile(aes(x = reg, fill = value, y = v)) + 
-  labs(
-    x = "Region, r", 
-    y = element_blank(), 
-    fill = TeX("$v^{(2)}_{1p}(r)$"), 
-    title = "Group 1, Level 2 Eigenvectors"
-  )
-
-data.frame(MHPCA$marg$within$regional$`Group 2`$eigendecomp$vectors[, 1:2]) %>% 
-  mutate(reg = unique(sim$data$reg)) %>% 
-  pivot_longer(X1:X2, names_to = "v") %>% 
-  ggplot() + 
-  geom_tile(aes(x = reg, fill = value, y = v)) + 
-  labs(
-    x = "Region, r", 
-    y = element_blank(), 
-    fill = TeX("$v^{(2)}_{2p}(r)$"), 
-    title = "Group 2, Level 2 Eigenvectors"
-  )
+cowplot::plot_grid(
+  data.frame(MHPCA$marg$within$regional$`Group 1`$eigendecomp$vectors[, 1:2]) %>% 
+    mutate(reg = unique(sim$data$reg)) %>% 
+    pivot_longer(X1:X2, names_to = "v") %>% 
+    ggplot() + 
+    geom_tile(aes(x = reg, fill = value, y = v)) + 
+    scale_fill_distiller(palette = "RdBu") + 
+    labs(
+      x = "Region, r", 
+      y = element_blank(), 
+      fill = TeX("$v^{(2)}_{1p}(r)$"), 
+      title = "Group 1, Level 2 Eigenvectors"
+    ), 
+  data.frame(MHPCA$marg$within$regional$`Group 2`$eigendecomp$vectors[, 1:2]) %>% 
+    mutate(reg = unique(sim$data$reg)) %>% 
+    pivot_longer(X1:X2, names_to = "v") %>% 
+    ggplot() + 
+    geom_tile(aes(x = reg, fill = value, y = v)) + 
+    scale_fill_distiller(palette = "RdBu") +
+    labs(
+      x = "Region, r", 
+      y = element_blank(), 
+      fill = TeX("$v^{(2)}_{2p}(r)$"), 
+      title = "Group 2, Level 2 Eigenvectors"
+    ), 
+  ncol = 2, 
+  labels = c("(a)", "(b)"), 
+  hjust = 0.01,
+  align = "hv", 
+  axis = "btlr"
+)
 ```
 
-<img src="man/figures/README-unnamed-chunk-9-1.png" width="45%" /><img src="man/figures/README-unnamed-chunk-9-2.png" width="45%" />
+<img src="man/figures/README-level-2-eigenvectors-1.png" style="display: block; margin: auto;" />
 
 ``` r
-data.frame(MHPCA$marg$between$functional$`Group 1`$eigendecomp$vectors[, 1:2]) %>% 
-  mutate(func = unique(sim$data$func)) %>% 
-  pivot_longer(X1:X2, names_to = "phi") %>% 
-  ggplot() + 
-  geom_line(aes(x = func, y = value, color = phi)) + 
-  labs(
-    x = "Time, t", 
-    y = TeX("$\\phi_{1l}^{(1)}(t)$"), 
-    color = TeX("$l$"), 
-    title = "Group 1, Level 1 Eigenfunctions"
-  )
-
-data.frame(MHPCA$marg$between$functional$`Group 2`$eigendecomp$vectors[, 1:2]) %>% 
-  mutate(func = unique(sim$data$func)) %>% 
-  pivot_longer(X1:X2, names_to = "phi") %>% 
-  ggplot() + 
-  geom_line(aes(x = func, y = value, color = phi)) + 
-  labs(
-    x = "Time, t", 
-    y = TeX("$\\phi_{2l}^{(1)}(t)$"), 
-    color = TeX("$l$"),
-    title = "Group 2, Level 1 Eigenfunctions"
-  )
+cowplot::plot_grid(
+  data.frame(MHPCA$marg$between$functional$`Group 1`$eigendecomp$vectors[, 1:2]) %>% 
+    mutate(func = unique(sim$data$func)) %>% 
+    pivot_longer(X1:X2, names_to = "phi") %>% 
+    ggplot() + 
+    geom_line(aes(x = func, y = value, color = phi)) + 
+    scale_color_brewer(palette = "Dark2") + 
+    labs(
+      x = "Time, t", 
+      y = TeX("$\\phi_{1l}^{(1)}(t)$"), 
+      color = TeX("$l$"), 
+      title = "Group 1, Level 1 Eigenfunctions"
+    ),
+  data.frame(MHPCA$marg$between$functional$`Group 2`$eigendecomp$vectors[, 1:2]) %>% 
+    mutate(func = unique(sim$data$func)) %>% 
+    pivot_longer(X1:X2, names_to = "phi") %>% 
+    ggplot() + 
+    geom_line(aes(x = func, y = value, color = phi)) + 
+    scale_color_brewer(palette = "Dark2") + 
+    labs(
+      x = "Time, t", 
+      y = TeX("$\\phi_{2l}^{(1)}(t)$"), 
+      color = TeX("$l$"),
+      title = "Group 2, Level 1 Eigenfunctions"
+    ), 
+  ncol = 2, 
+  labels = c("(a)", "(b)"), 
+  hjust = 0.01,
+  align = "hv", 
+  axis = "btlr"
+)
 ```
 
-<img src="man/figures/README-unnamed-chunk-10-1.png" width="45%" /><img src="man/figures/README-unnamed-chunk-10-2.png" width="45%" />
+<img src="man/figures/README-level-1-eigenfunctions-1.png" style="display: block; margin: auto;" />
 
 ``` r
-data.frame(MHPCA$marg$within$functional$`Group 1`$eigendecomp$vectors[, 1:2]) %>% 
-  mutate(func = unique(sim$data$func)) %>% 
-  pivot_longer(X1:X2, names_to = "phi") %>% 
-  ggplot() + 
-  geom_line(aes(x = func, y = value, color = phi)) + 
-  labs(
-    x = "Time, t", 
-    y = TeX("$\\phi_{1m}^{(2)}(t)$"), 
-    color = TeX("$m$"),
-    title = "Group 1, Level 2 Eigenfunctions"
-  )
-
-data.frame(MHPCA$marg$within$functional$`Group 2`$eigendecomp$vectors[, 1:2]) %>% 
-  mutate(func = unique(sim$data$func)) %>% 
-  pivot_longer(X1:X2, names_to = "phi") %>% 
-  ggplot() + 
-  geom_line(aes(x = func, y = value, color = phi)) +
-  labs(
-    x = "Time, t", 
-    y = TeX("$\\phi_{2m}^{(2)}(t)$"), 
-    color = TeX("$m$"),
-    title = "Group 2, Level 2 Eigenfunctions"
-  )
+cowplot::plot_grid(
+  data.frame(MHPCA$marg$within$functional$`Group 1`$eigendecomp$vectors[, 1:2]) %>% 
+    mutate(func = unique(sim$data$func)) %>% 
+    pivot_longer(X1:X2, names_to = "phi") %>% 
+    ggplot() + 
+    geom_line(aes(x = func, y = value, color = phi)) + 
+    scale_color_brewer(palette = "Dark2") + 
+    labs(
+      x = "Time, t", 
+      y = TeX("$\\phi_{1m}^{(2)}(t)$"), 
+      color = TeX("$m$"),
+      title = "Group 1, Level 2 Eigenfunctions"
+    ), 
+  data.frame(MHPCA$marg$within$functional$`Group 2`$eigendecomp$vectors[, 1:2]) %>% 
+    mutate(func = unique(sim$data$func)) %>% 
+    pivot_longer(X1:X2, names_to = "phi") %>% 
+    ggplot() + 
+    geom_line(aes(x = func, y = value, color = phi)) +
+    scale_color_brewer(palette = "Dark2") + 
+    labs(
+      x = "Time, t", 
+      y = TeX("$\\phi_{2m}^{(2)}(t)$"), 
+      color = TeX("$m$"),
+      title = "Group 2, Level 2 Eigenfunctions"
+    ),
+  ncol = 2, 
+  labels = c("(a)", "(b)"), 
+  hjust = 0.01,
+  align = "hv", 
+  axis = "btlr"
+)
 ```
 
-<img src="man/figures/README-unnamed-chunk-11-1.png" width="45%" /><img src="man/figures/README-unnamed-chunk-11-2.png" width="45%" />
+<img src="man/figures/README-level-2-eigenfunctions-1.png" style="display: block; margin: auto;" />
 
 Using simulated data, we can calculate the errors of each model
 component and display in a table, similar to the ones provided in the
@@ -262,7 +312,7 @@ rbind(
           data.frame(true = r) %>% 
             mutate(func = unique(sim$data$func), .before = 1)
         }, .id = "reg")
-      }, .id = "Repetition")
+      }, .id = "Repetition") 
     }, .id = "Group") %>% 
       mutate(
         Repetition = paste("Repetition", Repetition), 
@@ -581,26 +631,26 @@ rbind(
 #>    <chr>                   <int> <chr>                  
 #>  1 "$\\mu(t)$"                 1 <0.001 (<0.001, <0.001)
 #>  2 "$\\eta_{dc}(r, t)$"        4 <0.001 (<0.001, <0.001)
-#>  3 "$Y_{dij}(r,t)$"           60 0.073 (0.041, 0.412)   
-#>  4 "$\\phi_{d1}^{(1)}(t)$"     2 0.002 (<0.001, 0.003)  
-#>  5 "$\\phi^{(1)}_{d2}(t)$"     2 0.003 (0.001, 0.005)   
+#>  3 "$Y_{dij}(r,t)$"           60 0.072 (0.032, 0.252)   
+#>  4 "$\\phi_{d1}^{(1)}(t)$"     2 <0.001 (<0.001, <0.001)
+#>  5 "$\\phi^{(1)}_{d2}(t)$"     2 0.002 (<0.001, 0.002)  
 #>  6 "$\\phi^{(2)}_{d1}(t)$"     2 <0.001 (<0.001, <0.001)
 #>  7 "$\\phi^{(2)}_{d2}(t)$"     2 <0.001 (<0.001, <0.001)
-#>  8 "$\\nu_{d1}^{(1)}(r)$"      2 0.288 (0.095, 0.482)   
-#>  9 "$\\nu_{d2}^{(1)}(r)$"      2 0.304 (0.116, 0.492)   
-#> 10 "$\\nu_{d1}^{(2)}(r)$"      2 0.108 (0.079, 0.136)   
-#> 11 "$\\nu_{d2}^{(2)}(r)$"      2 0.108 (0.080, 0.137)   
-#> 12 "$\\lambda_{dg}$"           5 0.069 (0.029, 0.349)   
-#> 13 "$\\lambda_{dh}$"           4 0.015 (<0.001, 0.069)  
-#> 14 "$\\sigma^2_d$"             2 0.401 (0.298, 0.503)   
-#> 15 "$\\rho_{dW}$"              2 0.053 (0.016, 0.090)
+#>  8 "$\\nu_{d1}^{(1)}(r)$"      2 0.058 (0.012, 0.104)   
+#>  9 "$\\nu_{d2}^{(1)}(r)$"      2 0.065 (0.020, 0.111)   
+#> 10 "$\\nu_{d1}^{(2)}(r)$"      2 0.066 (0.015, 0.118)   
+#> 11 "$\\nu_{d2}^{(2)}(r)$"      2 0.067 (0.017, 0.117)   
+#> 12 "$\\lambda_{dg}$"           4 0.563 (0.159, 0.665)   
+#> 13 "$\\lambda_{dh}$"           6 0.015 (0.010, 0.075)   
+#> 14 "$\\sigma^2_d$"             2 0.402 (0.297, 0.507)   
+#> 15 "$\\rho_{dW}$"              2 0.028 (0.022, 0.035)
 ```
 
 ### Performing Bootstrapped Tests
 
 In order to draw group-level inference via parametric bootstrap, we can
 test the null hypothesis
-*H*<sub>0</sub> : *η*<sub>*d**j*</sub>(*r*, *t*) = *η*<sub>*d*</sub>(*r*, *t*)
+![H\_0: \\eta\_{dj}(r, t) = \\eta\_{d}(r, t)](https://latex.codecogs.com/png.latex?H_0%3A%20%5Ceta_%7Bdj%7D%28r%2C%20t%29%20%3D%20%5Ceta_%7Bd%7D%28r%2C%20t%29 "H_0: \eta_{dj}(r, t) = \eta_{d}(r, t)")
 with the following function
 
 ``` r
@@ -615,7 +665,7 @@ boot_out = MHPCA_bootstrap_within(
 ```
 
 and for tests between groups, we test the null hypothesis
-*H*<sub>0</sub> : *η*<sub>*d*<sub>1</sub>*j*<sub>1</sub></sub>(*r*, *t*) − *η*<sub>*d*<sub>1</sub>*j*<sub>2</sub></sub> = *η*<sub>*d*<sub>2</sub>*j*<sub>1</sub></sub> − *η*<sub>*d*<sub>2</sub>*j*<sub>2</sub></sub>
+![H\_0: \\eta\_{d\_1j\_1}(r, t) - \\eta\_{d\_1j\_2} = \\eta\_{d\_2j\_1} - \\eta\_{d\_2j\_2}](https://latex.codecogs.com/png.latex?H_0%3A%20%5Ceta_%7Bd_1j_1%7D%28r%2C%20t%29%20-%20%5Ceta_%7Bd_1j_2%7D%20%3D%20%5Ceta_%7Bd_2j_1%7D%20-%20%5Ceta_%7Bd_2j_2%7D "H_0: \eta_{d_1j_1}(r, t) - \eta_{d_1j_2} = \eta_{d_2j_1} - \eta_{d_2j_2}")
 with the following function
 
 ``` r

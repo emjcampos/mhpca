@@ -1,22 +1,24 @@
 ---
-output: github_document
+output:
+  github_document:
+    pandoc_args: --webtex
 ---
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-```{r, include = FALSE}
+```{r setup, include = FALSE}
 knitr::opts_chunk$set(
   collapse  = TRUE,
   comment   = "#>",
   fig.path  = "man/figures/README-",
-  out.width = "60%", 
-  # fig.align = "center", 
+  fig.align = "center",
   fig.show   = "hold", 
   message   = FALSE
 )
 
 library(tidyverse)
 library(latex2exp)
+library(xtable)
 ggplot2::theme_set(
   theme_bw() + 
     theme(
@@ -30,7 +32,7 @@ ggplot2::theme_set(
 library(here) 
 load(here("man", "data", "README-data.RData"))
 
-set.seed(1)
+set.seed(721)
 ```
 
 # mhpca
@@ -52,12 +54,12 @@ devtools::install_github("emjcampos/mhpca")
 
 Begin by loading the `mhpca` package. 
 
-```{r}
+```{r load package}
 library(mhpca) 
 ```
 
 Data can be simulated following the simulation low noise, dense set-up from the supplementary materials using the following function: 
-```{r}
+```{r simulate data}
 sim = MHPCA_simulation(
   sig_eps       = 0.25,    # measurement error standard deviation 
   n_d           = 15,      # number of subjects per group
@@ -74,12 +76,12 @@ sim = MHPCA_simulation(
 ```
 
 The data must be in the following form, with columns labeled `Repetition`, `Group`, `Subject`, `reg`, `func`, and `y`.
-```{r}
+```{r preview data}
 head(sim$data)
 ```
 
 Using the `MHPCA_decomp` function, you can estimate the model components.
-```{r}
+```{r run m-hpca decomposition}
 MHPCA = MHPCA_decomp(
   data       = sim$data, # data frame in long format 
   fve_cutoff = 0.8,  # FVE cut-off for reducing the # of product eigen components 
@@ -92,127 +94,170 @@ MHPCA = MHPCA_decomp(
 ```
 
 All of the components can then be plotted and inspected. 
-```{r, fig.align = "center"}
+```{r mean-function, out.width = "60%"}
 ggplot(data.frame(func = unique(sim$data$func), mu = MHPCA$mu)) + 
-  geom_line(aes(x = func, y = mu))
+  geom_line(aes(x = func, y = mu)) + 
+  labs(
+    x = TeX("$t$"), 
+    y = TeX("$\\mu(t)$"), 
+    linetype = element_blank()
+  ) 
 ```
 
-```{r, fig.align = "center"}
+```{r eta-functions, out.width = "60%"}
 ggplot(MHPCA$eta) + 
   geom_line(aes(
     x = func, y = eta, 
     color = Group, 
     linetype = Repetition, 
     group = interaction(Group, Repetition, reg)
-  ))
-```
-
-```{r, out.width = "45%"}
-data.frame(MHPCA$marg$between$regional$`Group 1`$eigendecomp$vectors[, 1:2]) %>%
-  mutate(reg = unique(sim$data$reg)) %>% 
-  pivot_longer(X1:X2, names_to = "v") %>% 
-  ggplot() + 
-  geom_tile(aes(x = reg, fill = value, y = v)) + 
+  )) + 
   labs(
-    x = "Region, r", 
-    y = element_blank(), 
-    fill = TeX("$v^{(1)}_{1k}(r)$"), 
-    title = "Group 1, Level 1 Eigenvectors"
-  )
-
-data.frame(MHPCA$marg$between$regional$`Group 2`$eigendecomp$vectors[, 1:2]) %>%
-  mutate(reg = unique(sim$data$reg)) %>% 
-  pivot_longer(X1:X2, names_to = "v") %>% 
-  ggplot() + 
-  geom_tile(aes(x = reg, fill = value, y = v)) + 
-  labs(
-    x = "Region, r", 
-    y = element_blank(), 
-    fill = TeX("$v^{(1)}_{2k}(r)$"), 
-    title = "Group 2, Level 1 Eigenvectors"
+    y = TeX("$\\eta_{dj}(r, t)$"), 
+    x = TeX("$t$"), 
+    linetype = element_blank(), 
+    color = element_blank()
   )
 ```
 
-```{r, out.width = "45%"}
-data.frame(MHPCA$marg$within$regional$`Group 1`$eigendecomp$vectors[, 1:2]) %>% 
-  mutate(reg = unique(sim$data$reg)) %>% 
-  pivot_longer(X1:X2, names_to = "v") %>% 
-  ggplot() + 
-  geom_tile(aes(x = reg, fill = value, y = v)) + 
-  labs(
-    x = "Region, r", 
-    y = element_blank(), 
-    fill = TeX("$v^{(2)}_{1p}(r)$"), 
-    title = "Group 1, Level 2 Eigenvectors"
-  )
-
-data.frame(MHPCA$marg$within$regional$`Group 2`$eigendecomp$vectors[, 1:2]) %>% 
-  mutate(reg = unique(sim$data$reg)) %>% 
-  pivot_longer(X1:X2, names_to = "v") %>% 
-  ggplot() + 
-  geom_tile(aes(x = reg, fill = value, y = v)) + 
-  labs(
-    x = "Region, r", 
-    y = element_blank(), 
-    fill = TeX("$v^{(2)}_{2p}(r)$"), 
-    title = "Group 2, Level 2 Eigenvectors"
-  )
+```{r level-1-eigenvectors, fig.asp = 0.4}
+cowplot::plot_grid(
+  data.frame(MHPCA$marg$between$regional$`Group 1`$eigendecomp$vectors[, 1:2]) %>%
+    mutate(reg = unique(sim$data$reg)) %>% 
+    pivot_longer(X1:X2, names_to = "v") %>% 
+    ggplot() + 
+    geom_tile(aes(x = reg, fill = value, y = v)) + 
+    scale_fill_distiller(palette = "RdBu") + 
+    labs(
+      x = "Region, r", 
+      y = element_blank(), 
+      fill = TeX("$v^{(1)}_{1k}(r)$"), 
+      title = "Group 1, Level 1 Eigenvectors"
+    ),
+  data.frame(MHPCA$marg$between$regional$`Group 2`$eigendecomp$vectors[, 1:2]) %>%
+    mutate(reg = unique(sim$data$reg)) %>% 
+    pivot_longer(X1:X2, names_to = "v") %>% 
+    ggplot() + 
+    geom_tile(aes(x = reg, fill = value, y = v)) + 
+    scale_fill_distiller(palette = "RdBu") + 
+    labs(
+      x = "Region, r", 
+      y = element_blank(), 
+      fill = TeX("$v^{(1)}_{2k}(r)$"), 
+      title = "Group 2, Level 1 Eigenvectors"
+    ), 
+  ncol = 2, 
+  labels = c("(a)", "(b)"), 
+  hjust = 0.01,
+  align = "hv", 
+  axis = "btlr"
+)
 ```
 
-```{r, out.width = "45%"}
-data.frame(MHPCA$marg$between$functional$`Group 1`$eigendecomp$vectors[, 1:2]) %>% 
-  mutate(func = unique(sim$data$func)) %>% 
-  pivot_longer(X1:X2, names_to = "phi") %>% 
-  ggplot() + 
-  geom_line(aes(x = func, y = value, color = phi)) + 
-  labs(
-    x = "Time, t", 
-    y = TeX("$\\phi_{1l}^{(1)}(t)$"), 
-    color = TeX("$l$"), 
-    title = "Group 1, Level 1 Eigenfunctions"
-  )
-
-data.frame(MHPCA$marg$between$functional$`Group 2`$eigendecomp$vectors[, 1:2]) %>% 
-  mutate(func = unique(sim$data$func)) %>% 
-  pivot_longer(X1:X2, names_to = "phi") %>% 
-  ggplot() + 
-  geom_line(aes(x = func, y = value, color = phi)) + 
-  labs(
-    x = "Time, t", 
-    y = TeX("$\\phi_{2l}^{(1)}(t)$"), 
-    color = TeX("$l$"),
-    title = "Group 2, Level 1 Eigenfunctions"
-  )
+```{r level-2-eigenvectors, fig.asp = 0.4}
+cowplot::plot_grid(
+  data.frame(MHPCA$marg$within$regional$`Group 1`$eigendecomp$vectors[, 1:2]) %>% 
+    mutate(reg = unique(sim$data$reg)) %>% 
+    pivot_longer(X1:X2, names_to = "v") %>% 
+    ggplot() + 
+    geom_tile(aes(x = reg, fill = value, y = v)) + 
+    scale_fill_distiller(palette = "RdBu") + 
+    labs(
+      x = "Region, r", 
+      y = element_blank(), 
+      fill = TeX("$v^{(2)}_{1p}(r)$"), 
+      title = "Group 1, Level 2 Eigenvectors"
+    ), 
+  data.frame(MHPCA$marg$within$regional$`Group 2`$eigendecomp$vectors[, 1:2]) %>% 
+    mutate(reg = unique(sim$data$reg)) %>% 
+    pivot_longer(X1:X2, names_to = "v") %>% 
+    ggplot() + 
+    geom_tile(aes(x = reg, fill = value, y = v)) + 
+    scale_fill_distiller(palette = "RdBu") +
+    labs(
+      x = "Region, r", 
+      y = element_blank(), 
+      fill = TeX("$v^{(2)}_{2p}(r)$"), 
+      title = "Group 2, Level 2 Eigenvectors"
+    ), 
+  ncol = 2, 
+  labels = c("(a)", "(b)"), 
+  hjust = 0.01,
+  align = "hv", 
+  axis = "btlr"
+)
 ```
 
-```{r, out.width = "45%"}
-data.frame(MHPCA$marg$within$functional$`Group 1`$eigendecomp$vectors[, 1:2]) %>% 
-  mutate(func = unique(sim$data$func)) %>% 
-  pivot_longer(X1:X2, names_to = "phi") %>% 
-  ggplot() + 
-  geom_line(aes(x = func, y = value, color = phi)) + 
-  labs(
-    x = "Time, t", 
-    y = TeX("$\\phi_{1m}^{(2)}(t)$"), 
-    color = TeX("$m$"),
-    title = "Group 1, Level 2 Eigenfunctions"
-  )
+```{r level-1-eigenfunctions, fig.asp = 0.4}
+cowplot::plot_grid(
+  data.frame(MHPCA$marg$between$functional$`Group 1`$eigendecomp$vectors[, 1:2]) %>% 
+    mutate(func = unique(sim$data$func)) %>% 
+    pivot_longer(X1:X2, names_to = "phi") %>% 
+    ggplot() + 
+    geom_line(aes(x = func, y = value, color = phi)) + 
+    scale_color_brewer(palette = "Dark2") + 
+    labs(
+      x = "Time, t", 
+      y = TeX("$\\phi_{1l}^{(1)}(t)$"), 
+      color = TeX("$l$"), 
+      title = "Group 1, Level 1 Eigenfunctions"
+    ),
+  data.frame(MHPCA$marg$between$functional$`Group 2`$eigendecomp$vectors[, 1:2]) %>% 
+    mutate(func = unique(sim$data$func)) %>% 
+    pivot_longer(X1:X2, names_to = "phi") %>% 
+    ggplot() + 
+    geom_line(aes(x = func, y = value, color = phi)) + 
+    scale_color_brewer(palette = "Dark2") + 
+    labs(
+      x = "Time, t", 
+      y = TeX("$\\phi_{2l}^{(1)}(t)$"), 
+      color = TeX("$l$"),
+      title = "Group 2, Level 1 Eigenfunctions"
+    ), 
+  ncol = 2, 
+  labels = c("(a)", "(b)"), 
+  hjust = 0.01,
+  align = "hv", 
+  axis = "btlr"
+)
+```
 
-data.frame(MHPCA$marg$within$functional$`Group 2`$eigendecomp$vectors[, 1:2]) %>% 
-  mutate(func = unique(sim$data$func)) %>% 
-  pivot_longer(X1:X2, names_to = "phi") %>% 
-  ggplot() + 
-  geom_line(aes(x = func, y = value, color = phi)) +
-  labs(
-    x = "Time, t", 
-    y = TeX("$\\phi_{2m}^{(2)}(t)$"), 
-    color = TeX("$m$"),
-    title = "Group 2, Level 2 Eigenfunctions"
-  )
+```{r level-2-eigenfunctions, fig.asp = 0.4}
+cowplot::plot_grid(
+  data.frame(MHPCA$marg$within$functional$`Group 1`$eigendecomp$vectors[, 1:2]) %>% 
+    mutate(func = unique(sim$data$func)) %>% 
+    pivot_longer(X1:X2, names_to = "phi") %>% 
+    ggplot() + 
+    geom_line(aes(x = func, y = value, color = phi)) + 
+    scale_color_brewer(palette = "Dark2") + 
+    labs(
+      x = "Time, t", 
+      y = TeX("$\\phi_{1m}^{(2)}(t)$"), 
+      color = TeX("$m$"),
+      title = "Group 1, Level 2 Eigenfunctions"
+    ), 
+  data.frame(MHPCA$marg$within$functional$`Group 2`$eigendecomp$vectors[, 1:2]) %>% 
+    mutate(func = unique(sim$data$func)) %>% 
+    pivot_longer(X1:X2, names_to = "phi") %>% 
+    ggplot() + 
+    geom_line(aes(x = func, y = value, color = phi)) +
+    scale_color_brewer(palette = "Dark2") + 
+    labs(
+      x = "Time, t", 
+      y = TeX("$\\phi_{2m}^{(2)}(t)$"), 
+      color = TeX("$m$"),
+      title = "Group 2, Level 2 Eigenfunctions"
+    ),
+  ncol = 2, 
+  labels = c("(a)", "(b)"), 
+  hjust = 0.01,
+  align = "hv", 
+  axis = "btlr"
+)
 ```
 
 Using simulated data, we can calculate the errors of each model component and display in a table, similar to the ones provided in the paper: 
-```{r}
+```{r error-table}
 groups = unique(data$Group) 
 names(groups) = groups
 
@@ -247,7 +292,7 @@ rbind(
           data.frame(true = r) %>% 
             mutate(func = unique(sim$data$func), .before = 1)
         }, .id = "reg")
-      }, .id = "Repetition")
+      }, .id = "Repetition") 
     }, .id = "Group") %>% 
       mutate(
         Repetition = paste("Repetition", Repetition), 
@@ -568,7 +613,7 @@ rbind(
 
 In order to draw group-level inference via parametric bootstrap, we can test the null hypothesis $H_0: \eta_{dj}(r, t) = \eta_{d}(r, t)$ with the following function 
 
-```{r, eval = FALSE}
+```{r within-test, eval = FALSE}
 boot_out = MHPCA_bootstrap_within(
   MHPCA  = MHPCA, 
   B      = 200, # number of bootstrap samples 
@@ -581,7 +626,7 @@ boot_out = MHPCA_bootstrap_within(
 
 and for tests between groups, we test the null hypothesis $H_0: \eta_{d_1j_1}(r, t) - \eta_{d_1j_2} = \eta_{d_2j_1} - \eta_{d_2j_2}$ with the following function
 
-```{r, eval = FALSE}
+```{r between-test, eval = FALSE}
 boot_out = MHPCA_bootstrap_between(
   MHPCA  = MHPCA, 
   B      = 200, # number of bootstrap samples 
