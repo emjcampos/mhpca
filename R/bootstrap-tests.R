@@ -22,6 +22,8 @@
 #' @importFrom stats setNames rnorm smooth.spline predict
 #' @importFrom stringr str_remove str_split str_pad
 #' @importFrom tictoc tic toc
+#'
+#' @export
 MHPCA_bootstrap_within <- function(MHPCA, B, region, group, nknots, quiet = FALSE) {
 
   # to avoid issues with non-standard evaluation in tidyeval, set "global
@@ -326,6 +328,8 @@ MHPCA_bootstrap_within <- function(MHPCA, B, region, group, nknots, quiet = FALS
 #' @importFrom stringr str_remove str_split str_pad
 #' @importFrom tictoc tic toc
 #' @importFrom tidyr pivot_wider
+#'
+#' @export
 MHPCA_bootstrap_between <- function(MHPCA, B, region, group, nknots, quiet = FALSE) {
 
   # to avoid issues with non-standard evaluation in tidyeval, set "global

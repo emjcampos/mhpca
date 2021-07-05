@@ -30,8 +30,9 @@ Begin by loading the `mhpca` package.
 library(mhpca) 
 ```
 
-Data can be simulated following the simulation low noise, dense set-up
-from the supplementary materials using the following function:
+Data can be simulated following the low noise, dense simulation set-up
+with 15 subjects per group from the supplementary materials using the
+following function:
 
 ``` r
 sim = MHPCA_simulation(
@@ -54,20 +55,13 @@ The data must be in the following form, with columns labeled
 
 ``` r
 head(sim$data)
-#>     Repetition   Group    Subject reg       func y_nonoise       noise
-#> 1 Repetition 1 Group 1 Subject 01 E01 0.00000000 1.4901930 -0.37896860
-#> 2 Repetition 1 Group 1 Subject 01 E01 0.02040816 1.3658750  0.07670852
-#> 3 Repetition 1 Group 1 Subject 01 E01 0.04081633 1.2479442 -0.50811750
-#> 4 Repetition 1 Group 1 Subject 01 E01 0.06122449 1.1362658  0.27482763
-#> 5 Repetition 1 Group 1 Subject 01 E01 0.08163265 1.0306834 -0.02199535
-#> 6 Repetition 1 Group 1 Subject 01 E01 0.10204082 0.9310203 -0.06845363
-#>           y
-#> 1 1.1112244
-#> 2 1.4425836
-#> 3 0.7398267
-#> 4 1.4110934
-#> 5 1.0086881
-#> 6 0.8625667
+#>     Repetition   Group    Subject reg       func         y
+#> 1 Repetition 1 Group 1 Subject 01 E01 0.00000000 1.1112244
+#> 2 Repetition 1 Group 1 Subject 01 E01 0.02040816 1.4425836
+#> 3 Repetition 1 Group 1 Subject 01 E01 0.04081633 0.7398267
+#> 4 Repetition 1 Group 1 Subject 01 E01 0.06122449 1.4110934
+#> 5 Repetition 1 Group 1 Subject 01 E01 0.08163265 1.0086881
+#> 6 Repetition 1 Group 1 Subject 01 E01 0.10204082 0.8625667
 ```
 
 Using the `MHPCA_decomp` function, you can estimate the model
@@ -84,20 +78,40 @@ MHPCA = MHPCA_decomp(
   quiet      = FALSE # display messages for timing 
 )
 #> 0. Data formatting: 0.016 sec elapsed
-#> 1. Estimation of Fixed Effects: 0.158 sec elapsed
+#> 1. Estimation of Fixed Effects: 0.152 sec elapsed
 #> 2. Estimation of Covariances
-#>     a. Raw Covariances: 0.209 sec elapsed
-#>     b,c. Estimation of Marginal Covariances and Smoothing: 0.684 sec elapsed
+#>     a. Raw Covariances: 0.182 sec elapsed
+#>     b,c. Estimation of Marginal Covariances and Smoothing: 0.759 sec elapsed
 #> 3. Estimation of Marginal Eigencomponents: 0.004 sec elapsed
 #> 4. Estimation of Variance Components
-#>     a. Fit big model: 4.229 sec elapsed
-#>     b. Choose number of components: 0.038 sec elapsed
-#>     c. Final Model: 5.612 sec elapsed
-#>     d. Prediction: 0.189 sec elapsed
-#> MHPCA Decomposition and Estimation: 11.141 sec elapsed
+#>     a. Fit big model: 4.089 sec elapsed
+#>     b. Choose number of components: 0.034 sec elapsed
+#>     c. Final Model: 5.236 sec elapsed
+#>     d. Prediction: 0.186 sec elapsed
+#> MHPCA Decomposition and Estimation: 10.659 sec elapsed
 ```
 
+The output of the `MHPCA_decomp` function
+
+| name  | description                                                                                                                                                                                                  |
+|-------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| mu    | overall mean function (![T x 1](https://latex.codecogs.com/png.latex?T%20x%201 "T x 1") vector)                                                                                                              |
+| eta   | group-region-reptition-specific shifts (![RTJD \\times 5](https://latex.codecogs.com/png.latex?RTJD%20%5Ctimes%205 "RTJD \times 5") data frame with columns for `Group`, `reg`, `Repetition`, `func`, `eta`) |
+| covar | list with the total, between- and within-subject covariances                                                                                                                                                 |
+| marg  | list with the between- and within-subject marginal covariances, eigenvectors, and eigenfunctions                                                                                                             |
+| model | list with the full and reduced models and their components (scores and variance components)                                                                                                                  |
+| data  | data used in the mixed effects model                                                                                                                                                                         |
+| FVE   | fraction of variance explained by each product eigen component, G’ and H’                                                                                                                                    |
+
+### Plotting
+
 All of the components can then be plotted and inspected.
+
+#### Overall Mean Function
+
+The estimated overall mean function
+![\\mu(t)](https://latex.codecogs.com/png.latex?%5Cmu%28t%29 "\mu(t)")
+can be accessed using `MHPCA$mu`
 
 ``` r
 ggplot(data.frame(func = unique(sim$data$func), mu = MHPCA$mu)) + 
@@ -110,6 +124,12 @@ ggplot(data.frame(func = unique(sim$data$func), mu = MHPCA$mu)) +
 ```
 
 <img src="man/figures/README-mean-function-1.png" width="60%" style="display: block; margin: auto;" />
+
+#### Group-Region-Repetition-Specific Shifts
+
+The estimated group-region-repetition-specific shifts
+![\\eta\_{dj}(r, t)](https://latex.codecogs.com/png.latex?%5Ceta_%7Bdj%7D%28r%2C%20t%29 "\eta_{dj}(r, t)")
+can be accessed using `MHPCA$eta`
 
 ``` r
 ggplot(MHPCA$eta) + 
@@ -129,13 +149,19 @@ ggplot(MHPCA$eta) +
 
 <img src="man/figures/README-eta-functions-1.png" width="60%" style="display: block; margin: auto;" />
 
+#### Level 1 Marginal Eigenvectors
+
+The level 1 marginal regional eigenvectors for Group 1 are stored in
+`MHPCA$marg$between$regional$'Group 1'$eigendecomp$vectors`.
+
 ``` r
 cowplot::plot_grid(
   data.frame(MHPCA$marg$between$regional$`Group 1`$eigendecomp$vectors[, 1:2]) %>%
+    setNames(c("k = 1", "k = 2")) %>% 
     mutate(reg = unique(sim$data$reg)) %>% 
-    pivot_longer(X1:X2, names_to = "v") %>% 
+    pivot_longer(`k = 1`:`k = 2`, names_to = "k") %>% 
     ggplot() + 
-    geom_tile(aes(x = reg, fill = value, y = v)) + 
+    geom_tile(aes(x = reg, fill = value, y = k)) + 
     scale_fill_distiller(palette = "RdBu") + 
     labs(
       x = "Region, r", 
@@ -144,10 +170,11 @@ cowplot::plot_grid(
       title = "Group 1, Level 1 Eigenvectors"
     ),
   data.frame(MHPCA$marg$between$regional$`Group 2`$eigendecomp$vectors[, 1:2]) %>%
+    setNames(c("k = 1", "k = 2")) %>% 
     mutate(reg = unique(sim$data$reg)) %>% 
-    pivot_longer(X1:X2, names_to = "v") %>% 
+    pivot_longer(`k = 1`:`k = 2`, names_to = "k") %>% 
     ggplot() + 
-    geom_tile(aes(x = reg, fill = value, y = v)) + 
+    geom_tile(aes(x = reg, fill = value, y = k)) + 
     scale_fill_distiller(palette = "RdBu") + 
     labs(
       x = "Region, r", 
@@ -165,13 +192,19 @@ cowplot::plot_grid(
 
 <img src="man/figures/README-level-1-eigenvectors-1.png" style="display: block; margin: auto;" />
 
+#### Level 2 Marignal Eigenvectors
+
+The level 2 marginal regional eigenvectors for Group 1 are stored in
+`MHPCA$marg$within$regional$'Group 1'$eigendecomp$vectors`.
+
 ``` r
 cowplot::plot_grid(
   data.frame(MHPCA$marg$within$regional$`Group 1`$eigendecomp$vectors[, 1:2]) %>% 
+    setNames(c("p = 1", "p = 2")) %>% 
     mutate(reg = unique(sim$data$reg)) %>% 
-    pivot_longer(X1:X2, names_to = "v") %>% 
+    pivot_longer(`p = 1`:`p = 2`, names_to = "p") %>% 
     ggplot() + 
-    geom_tile(aes(x = reg, fill = value, y = v)) + 
+    geom_tile(aes(x = reg, fill = value, y = p)) + 
     scale_fill_distiller(palette = "RdBu") + 
     labs(
       x = "Region, r", 
@@ -180,10 +213,11 @@ cowplot::plot_grid(
       title = "Group 1, Level 2 Eigenvectors"
     ), 
   data.frame(MHPCA$marg$within$regional$`Group 2`$eigendecomp$vectors[, 1:2]) %>% 
+    setNames(c("p = 1", "p = 2")) %>% 
     mutate(reg = unique(sim$data$reg)) %>% 
-    pivot_longer(X1:X2, names_to = "v") %>% 
+    pivot_longer(`p = 1`:`p = 2`, names_to = "p") %>% 
     ggplot() + 
-    geom_tile(aes(x = reg, fill = value, y = v)) + 
+    geom_tile(aes(x = reg, fill = value, y = p)) + 
     scale_fill_distiller(palette = "RdBu") +
     labs(
       x = "Region, r", 
@@ -201,30 +235,37 @@ cowplot::plot_grid(
 
 <img src="man/figures/README-level-2-eigenvectors-1.png" style="display: block; margin: auto;" />
 
+#### Level 1 Marginal Eigenfunctions
+
+The level 1 marginal functional eigenfunctions for Group 1 are stored in
+`MHPCA$marg$between$functional$'Group 1'$eigendecomp$vectors`.
+
 ``` r
 cowplot::plot_grid(
-  data.frame(MHPCA$marg$between$functional$`Group 1`$eigendecomp$vectors[, 1:2]) %>% 
+  data.frame(MHPCA$marg$between$functional$`Group 1`$eigendecomp$vectors[, 1:2]) %>%
+    setNames(c("l = 1", "l = 2")) %>% 
     mutate(func = unique(sim$data$func)) %>% 
-    pivot_longer(X1:X2, names_to = "phi") %>% 
+    pivot_longer(`l = 1`:`l = 2`, names_to = "phi") %>% 
     ggplot() + 
     geom_line(aes(x = func, y = value, color = phi)) + 
     scale_color_brewer(palette = "Dark2") + 
     labs(
       x = "Time, t", 
       y = TeX("$\\phi_{1l}^{(1)}(t)$"), 
-      color = TeX("$l$"), 
+      color = element_blank(), 
       title = "Group 1, Level 1 Eigenfunctions"
     ),
   data.frame(MHPCA$marg$between$functional$`Group 2`$eigendecomp$vectors[, 1:2]) %>% 
+    setNames(c("l = 1", "l = 2")) %>% 
     mutate(func = unique(sim$data$func)) %>% 
-    pivot_longer(X1:X2, names_to = "phi") %>% 
+    pivot_longer(`l = 1`:`l = 2`, names_to = "phi") %>% 
     ggplot() + 
     geom_line(aes(x = func, y = value, color = phi)) + 
     scale_color_brewer(palette = "Dark2") + 
     labs(
       x = "Time, t", 
       y = TeX("$\\phi_{2l}^{(1)}(t)$"), 
-      color = TeX("$l$"),
+      color = element_blank(),
       title = "Group 2, Level 1 Eigenfunctions"
     ), 
   ncol = 2, 
@@ -232,16 +273,22 @@ cowplot::plot_grid(
   hjust = 0.01,
   align = "hv", 
   axis = "btlr"
-)
+) 
 ```
 
 <img src="man/figures/README-level-1-eigenfunctions-1.png" style="display: block; margin: auto;" />
 
+#### Level 2 Marignal Eigenfunctions
+
+The level 2 marginal functional eigenfunctions for Group 1 are stored in
+`MHPCA$marg$within$functional$'Group 1'$eigendecomp$vectors`.
+
 ``` r
 cowplot::plot_grid(
   data.frame(MHPCA$marg$within$functional$`Group 1`$eigendecomp$vectors[, 1:2]) %>% 
+    setNames(c("m = 1", "m = 2")) %>% 
     mutate(func = unique(sim$data$func)) %>% 
-    pivot_longer(X1:X2, names_to = "phi") %>% 
+    pivot_longer(`m = 1`:`m = 2`, names_to = "phi") %>% 
     ggplot() + 
     geom_line(aes(x = func, y = value, color = phi)) + 
     scale_color_brewer(palette = "Dark2") + 
@@ -252,8 +299,9 @@ cowplot::plot_grid(
       title = "Group 1, Level 2 Eigenfunctions"
     ), 
   data.frame(MHPCA$marg$within$functional$`Group 2`$eigendecomp$vectors[, 1:2]) %>% 
+   setNames(c("m = 1", "m = 2")) %>% 
     mutate(func = unique(sim$data$func)) %>% 
-    pivot_longer(X1:X2, names_to = "phi") %>% 
+    pivot_longer(`m = 1`:`m = 2`, names_to = "phi") %>% 
     ggplot() + 
     geom_line(aes(x = func, y = value, color = phi)) +
     scale_color_brewer(palette = "Dark2") + 
@@ -273,9 +321,11 @@ cowplot::plot_grid(
 
 <img src="man/figures/README-level-2-eigenfunctions-1.png" style="display: block; margin: auto;" />
 
+### Summary Tables
+
 Using simulated data, we can calculate the errors of each model
-component and display in a table, similar to the ones provided in the
-paper:
+component and display the median, 10th percentile and 90th percentile in
+a table, similar to the tables provided in the paper.
 
 ``` r
 groups = unique(data$Group) 
@@ -291,7 +341,7 @@ parameter_order = c(
 ) 
 
 rbind(
-  
+  # mu 
   data.frame(
     func = unique(sim$data$func), 
     estimated = MHPCA$mu,
@@ -303,6 +353,7 @@ rbind(
     ) %>% 
     mutate(parameter = "mu", .before = 1), 
   
+  # eta 
   full_join(
     MHPCA$eta %>% 
       rename(estimated = eta), 
@@ -337,6 +388,7 @@ rbind(
     ) %>% 
     select(parameter, rse), 
   
+  # level 1 eigenvectors  
   map_dfr(groups, function(d) {
     v_k <- map_dfc(sim$v_k, identity) %>% setNames(c("X1", "X2"))
     v_k_hat <- data.frame(
@@ -379,6 +431,7 @@ rbind(
     ) %>% 
     select(parameter, rse), 
   
+  # level 2 eigenvectors
   map_dfr(groups, function(d) {
     v_p <- map_dfc(sim$v_p, identity) %>% setNames(c("X1", "X2"))
     v_p_hat <- data.frame(
@@ -419,9 +472,9 @@ rbind(
       parameter = v, 
       .before = 1
     ) %>% 
-    select(parameter, rse), 
+    select(parameter, rse),
   
-  
+  # level 1 eigenfunctions 
   map_dfr(groups, function(d) {
     phi_l <- map_dfc(sim$phi_l, identity) %>% setNames(c("X1", "X2"))
     
@@ -470,8 +523,9 @@ rbind(
       parameter = phi, 
       .before = 1
     ) %>% 
-    select(parameter, rse), 
+    select(parameter, rse),
   
+  # level 2 eigenfunctions 
   map_dfr(groups, function(d) {
     phi_m <- map_dfc(sim$phi_m, identity) %>% setNames(c("X1", "X2"))
     
@@ -522,6 +576,7 @@ rbind(
     ) %>% 
     select(parameter, rse),
   
+  # y prediction 
   map_dfr(groups, function(d) {
     MHPCA$data[[d]] %>%
       group_by(Repetition, Subject, reg) %>%
@@ -538,6 +593,7 @@ rbind(
     mutate(parameter = "y", .before = 1) %>% 
     select(parameter, rse), 
   
+  # eigenvalues
   rbind(
     map_dfr(groups, function(d) {
       data.frame(
@@ -578,6 +634,7 @@ rbind(
       rse = (estimated - truth) ^ 2 / truth ^ 2
     ), 
   
+  # sigma2
   map_dfr(groups, function(d) { 
     MHPCA$model$final[[d]]$sigma2
   }, .id = "Group") %>% 
@@ -586,6 +643,7 @@ rbind(
     summarize(rse = (estimated - truth) ^ 2 / truth ^ 2) %>% 
     mutate(parameter = "sigma2"), 
   
+  # rho 
   functional_ICC(MHPCA) %>% 
     mutate(
       truth = sum(sim$lambda_kl$lambda) / (sum(sim$lambda_kl$lambda) + sum(sim$lambda_pm$lambda))
@@ -593,7 +651,6 @@ rbind(
     rename(estimated = rho_dW) %>% 
     summarize(rse = (estimated - truth) ^ 2 / truth ^ 2) %>% 
     mutate(parameter = "rho")
-  
 ) %>% 
   group_by(parameter) %>% 
   summarise(
@@ -662,11 +719,21 @@ boot_out = MHPCA_bootstrap_within(
   nknots = 5, 
   quiet  = FALSE
 )
+#> 0. Setup Parametric Bootstrap Components: 0.064 sec elapsed
+#> 1. Bootstrap Procedure: 411.859 sec elapsed
+#> 2. Calculate p-values: 0.233 sec elapsed
+#> Bootstrap Procedure: 412.156 sec elapsed
 ```
 
-and for tests between groups, we test the null hypothesis
-![H\_0: \\eta\_{d\_1j\_1}(r, t) - \\eta\_{d\_1j\_2} = \\eta\_{d\_2j\_1} - \\eta\_{d\_2j\_2}](https://latex.codecogs.com/png.latex?H_0%3A%20%5Ceta_%7Bd_1j_1%7D%28r%2C%20t%29%20-%20%5Ceta_%7Bd_1j_2%7D%20%3D%20%5Ceta_%7Bd_2j_1%7D%20-%20%5Ceta_%7Bd_2j_2%7D "H_0: \eta_{d_1j_1}(r, t) - \eta_{d_1j_2} = \eta_{d_2j_1} - \eta_{d_2j_2}")
-with the following function
+The output of this function is a list with elements `pval` (the
+bootstrapped p-value for the test) and `boots` (the estimated
+![\\overline{\\eta}\_{dj}^b(r, t)](https://latex.codecogs.com/png.latex?%5Coverline%7B%5Ceta%7D_%7Bdj%7D%5Eb%28r%2C%20t%29 "\overline{\eta}_{dj}^b(r, t)")
+for each bootstrapped sample).
+
+For tests between groups, we test the null hypothesis
+![H\_0: \\eta\_{d\_1j\_1}(r, t) - \\eta\_{d\_1j\_2}(r, t) = \\eta\_{d\_2j\_1}(r, t) - \\eta\_{d\_2j\_2}(r, t)](https://latex.codecogs.com/png.latex?H_0%3A%20%5Ceta_%7Bd_1j_1%7D%28r%2C%20t%29%20-%20%5Ceta_%7Bd_1j_2%7D%28r%2C%20t%29%20%3D%20%5Ceta_%7Bd_2j_1%7D%28r%2C%20t%29%20-%20%5Ceta_%7Bd_2j_2%7D%28r%2C%20t%29 "H_0: \eta_{d_1j_1}(r, t) - \eta_{d_1j_2}(r, t) = \eta_{d_2j_1}(r, t) - \eta_{d_2j_2}(r, t)")
+with the following function, which performs the bootstrap sampling in
+parallel.
 
 ``` r
 boot_out = MHPCA_bootstrap_between(
@@ -678,3 +745,7 @@ boot_out = MHPCA_bootstrap_between(
   quiet  = FALSE
 )
 ```
+
+The output of this function is the similar to the output of
+`MHPCA_bootstrap_within`, however `boots` contains the estimated
+![\\overline{\\eta}^b\_{j-}(r, t)](https://latex.codecogs.com/png.latex?%5Coverline%7B%5Ceta%7D%5Eb_%7Bj-%7D%28r%2C%20t%29 "\overline{\eta}^b_{j-}(r, t)").
