@@ -54,7 +54,7 @@ A list with the simulated components.
 \item lambda_pm - The simulated level 2 eigenvalues
 \item xi - The simulated subject-specific scores
 \item zeta - The simulated subject/repetition-specific scores
-\item data - The simulated dataframe with columns for
+\item data - The simulated dataframe
 \item sig_eps - The simulated measurement error variance
 }
 }
