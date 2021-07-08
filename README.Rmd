@@ -5,12 +5,6 @@ output:
 always_allow_html: true
 ---
 
-<style>
-.math {
-font-size: small;
-}
-</style>
-
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
 ```{r setup, include = FALSE}
@@ -662,7 +656,10 @@ rbind(
     ), 
     .before = 1
   ) %>% 
-  kbl(caption = "Percentiles 50\\% (10\\%, 90\\%) of the relative squared errors and normalized mean squared errors for model components based on 1 Monte Carlo run from the simulation design at $n_d = 15$ for the low noise, dense simulation.") %>% 
+  kbl(
+    caption = "Percentiles 50\\% (10\\%, 90\\%) of the relative squared errors and normalized mean squared errors for model components based on 1 Monte Carlo run from the simulation design at $n_d = 15$ for the low noise, dense simulation.", 
+    format = "markdown"
+  ) %>% 
   kable_styling()
 ```
 

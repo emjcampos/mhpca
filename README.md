@@ -1,9 +1,4 @@
 
-<style>
-.math {
-font-size: small;
-}
-</style>
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
 # mhpca
@@ -82,18 +77,18 @@ MHPCA = MHPCA_decomp(
   reduce     = TRUE, # reduce the # of product eigen components and re-estimate model
   quiet      = FALSE # display messages for timing 
 )
-#> 0. Data formatting: 0.015 sec elapsed
-#> 1. Estimation of Fixed Effects: 0.148 sec elapsed
+#> 0. Data formatting: 0.016 sec elapsed
+#> 1. Estimation of Fixed Effects: 0.16 sec elapsed
 #> 2. Estimation of Covariances
-#>     a. Raw Covariances: 0.181 sec elapsed
-#>     b,c. Estimation of Marginal Covariances and Smoothing: 0.758 sec elapsed
-#> 3. Estimation of Marginal Eigencomponents: 0.003 sec elapsed
+#>     a. Raw Covariances: 0.191 sec elapsed
+#>     b,c. Estimation of Marginal Covariances and Smoothing: 0.783 sec elapsed
+#> 3. Estimation of Marginal Eigencomponents: 0.004 sec elapsed
 #> 4. Estimation of Variance Components
-#>     a. Fit big model: 4.243 sec elapsed
-#>     b. Choose number of components: 0.034 sec elapsed
-#>     c. Final Model: 5.256 sec elapsed
-#>     d. Prediction: 0.187 sec elapsed
-#> MHPCA Decomposition and Estimation: 10.826 sec elapsed
+#>     a. Fit big model: 4.423 sec elapsed
+#>     b. Choose number of components: 0.039 sec elapsed
+#>     c. Final Model: 5.471 sec elapsed
+#>     d. Prediction: 0.196 sec elapsed
+#> MHPCA Decomposition and Estimation: 11.284 sec elapsed
 ```
 
 The output of the `MHPCA_decomp` function
@@ -696,199 +691,39 @@ rbind(
     ), 
     .before = 1
   ) %>% 
-  kbl(caption = "Percentiles 50\\% (10\\%, 90\\%) of the relative squared errors and normalized mean squared errors for model components based on 1 Monte Carlo run from the simulation design at $n_d = 15$ for the low noise, dense simulation.") %>% 
+  kbl(
+    caption = "Percentiles 50\\% (10\\%, 90\\%) of the relative squared errors and normalized mean squared errors for model components based on 1 Monte Carlo run from the simulation design at $n_d = 15$ for the low noise, dense simulation.", 
+    format = "markdown"
+  ) %>% 
   kable_styling()
+#> Warning in kable_styling(.): Please specify format in kable. kableExtra can
+#> customize either HTML or LaTeX outputs. See https://haozhu233.github.io/
+#> kableExtra/ for details.
 ```
 
-<table class="table" style="margin-left: auto; margin-right: auto;">
-<caption>
+| parameter                                                                                                                 |   n | RSE                              |
+|:--------------------------------------------------------------------------------------------------------------------------|----:|:---------------------------------|
+| ![\\mu(t)](https://latex.codecogs.com/png.latex?%5Cmu%28t%29 "\mu(t)")                                                    |   1 | &lt;0.001 (&lt;0.001, &lt;0.001) |
+| ![\\eta\_{dj}(r, t)](https://latex.codecogs.com/png.latex?%5Ceta_%7Bdj%7D%28r%2C%20t%29 "\eta_{dj}(r, t)")                |   4 | &lt;0.001 (&lt;0.001, &lt;0.001) |
+| ![Y\_{dij}(r,t)](https://latex.codecogs.com/png.latex?Y_%7Bdij%7D%28r%2Ct%29 "Y_{dij}(r,t)")                              |  60 | 0.072 (0.032, 0.252)             |
+| ![\\phi\_{d1}^{(1)}(t)](https://latex.codecogs.com/png.latex?%5Cphi_%7Bd1%7D%5E%7B%281%29%7D%28t%29 "\phi_{d1}^{(1)}(t)") |   2 | &lt;0.001 (&lt;0.001, &lt;0.001) |
+| ![\\phi^{(1)}\_{d2}(t)](https://latex.codecogs.com/png.latex?%5Cphi%5E%7B%281%29%7D_%7Bd2%7D%28t%29 "\phi^{(1)}_{d2}(t)") |   2 | 0.002 (&lt;0.001, 0.002)         |
+| ![\\phi^{(2)}\_{d1}(t)](https://latex.codecogs.com/png.latex?%5Cphi%5E%7B%282%29%7D_%7Bd1%7D%28t%29 "\phi^{(2)}_{d1}(t)") |   2 | &lt;0.001 (&lt;0.001, &lt;0.001) |
+| ![\\phi^{(2)}\_{d2}(t)](https://latex.codecogs.com/png.latex?%5Cphi%5E%7B%282%29%7D_%7Bd2%7D%28t%29 "\phi^{(2)}_{d2}(t)") |   2 | &lt;0.001 (&lt;0.001, &lt;0.001) |
+| ![\\nu\_{d1}^{(1)}(r)](https://latex.codecogs.com/png.latex?%5Cnu_%7Bd1%7D%5E%7B%281%29%7D%28r%29 "\nu_{d1}^{(1)}(r)")    |   2 | 0.058 (0.012, 0.104)             |
+| ![\\nu\_{d2}^{(1)}(r)](https://latex.codecogs.com/png.latex?%5Cnu_%7Bd2%7D%5E%7B%281%29%7D%28r%29 "\nu_{d2}^{(1)}(r)")    |   2 | 0.065 (0.020, 0.111)             |
+| ![\\nu\_{d1}^{(2)}(r)](https://latex.codecogs.com/png.latex?%5Cnu_%7Bd1%7D%5E%7B%282%29%7D%28r%29 "\nu_{d1}^{(2)}(r)")    |   2 | 0.066 (0.015, 0.118)             |
+| ![\\nu\_{d2}^{(2)}(r)](https://latex.codecogs.com/png.latex?%5Cnu_%7Bd2%7D%5E%7B%282%29%7D%28r%29 "\nu_{d2}^{(2)}(r)")    |   2 | 0.067 (0.017, 0.117)             |
+| ![\\lambda\_{dg}](https://latex.codecogs.com/png.latex?%5Clambda_%7Bdg%7D "\lambda_{dg}")                                 |   4 | 0.563 (0.159, 0.665)             |
+| ![\\lambda\_{dh}](https://latex.codecogs.com/png.latex?%5Clambda_%7Bdh%7D "\lambda_{dh}")                                 |   6 | 0.015 (0.010, 0.075)             |
+| ![\\sigma^2\_d](https://latex.codecogs.com/png.latex?%5Csigma%5E2_d "\sigma^2_d")                                         |   2 | 0.402 (0.297, 0.507)             |
+| ![\\rho\_{dW}](https://latex.codecogs.com/png.latex?%5Crho_%7BdW%7D "\rho_{dW}")                                          |   2 | 0.028 (0.022, 0.035)             |
+
 Percentiles 50% (10%, 90%) of the relative squared errors and normalized
 mean squared errors for model components based on 1 Monte Carlo run from
 the simulation design at
 ![n\_d = 15](https://latex.codecogs.com/png.latex?n_d%20%3D%2015 "n_d = 15")
 for the low noise, dense simulation.
-</caption>
-<thead>
-<tr>
-<th style="text-align:left;">
-parameter
-</th>
-<th style="text-align:right;">
-n
-</th>
-<th style="text-align:left;">
-RSE
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td style="text-align:left;">
-![\\mu(t)](https://latex.codecogs.com/png.latex?%5Cmu%28t%29 "\mu(t)")
-</td>
-<td style="text-align:right;">
-1
-</td>
-<td style="text-align:left;">
-&lt;0.001 (&lt;0.001, &lt;0.001)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-![\\eta\_{dj}(r, t)](https://latex.codecogs.com/png.latex?%5Ceta_%7Bdj%7D%28r%2C%20t%29 "\eta_{dj}(r, t)")
-</td>
-<td style="text-align:right;">
-4
-</td>
-<td style="text-align:left;">
-&lt;0.001 (&lt;0.001, &lt;0.001)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-![Y\_{dij}(r,t)](https://latex.codecogs.com/png.latex?Y_%7Bdij%7D%28r%2Ct%29 "Y_{dij}(r,t)")
-</td>
-<td style="text-align:right;">
-60
-</td>
-<td style="text-align:left;">
-0.072 (0.032, 0.252)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-![\\phi\_{d1}^{(1)}(t)](https://latex.codecogs.com/png.latex?%5Cphi_%7Bd1%7D%5E%7B%281%29%7D%28t%29 "\phi_{d1}^{(1)}(t)")
-</td>
-<td style="text-align:right;">
-2
-</td>
-<td style="text-align:left;">
-&lt;0.001 (&lt;0.001, &lt;0.001)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-![\\phi^{(1)}\_{d2}(t)](https://latex.codecogs.com/png.latex?%5Cphi%5E%7B%281%29%7D_%7Bd2%7D%28t%29 "\phi^{(1)}_{d2}(t)")
-</td>
-<td style="text-align:right;">
-2
-</td>
-<td style="text-align:left;">
-0.002 (&lt;0.001, 0.002)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-![\\phi^{(2)}\_{d1}(t)](https://latex.codecogs.com/png.latex?%5Cphi%5E%7B%282%29%7D_%7Bd1%7D%28t%29 "\phi^{(2)}_{d1}(t)")
-</td>
-<td style="text-align:right;">
-2
-</td>
-<td style="text-align:left;">
-&lt;0.001 (&lt;0.001, &lt;0.001)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-![\\phi^{(2)}\_{d2}(t)](https://latex.codecogs.com/png.latex?%5Cphi%5E%7B%282%29%7D_%7Bd2%7D%28t%29 "\phi^{(2)}_{d2}(t)")
-</td>
-<td style="text-align:right;">
-2
-</td>
-<td style="text-align:left;">
-&lt;0.001 (&lt;0.001, &lt;0.001)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-![\\nu\_{d1}^{(1)}(r)](https://latex.codecogs.com/png.latex?%5Cnu_%7Bd1%7D%5E%7B%281%29%7D%28r%29 "\nu_{d1}^{(1)}(r)")
-</td>
-<td style="text-align:right;">
-2
-</td>
-<td style="text-align:left;">
-0.058 (0.012, 0.104)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-![\\nu\_{d2}^{(1)}(r)](https://latex.codecogs.com/png.latex?%5Cnu_%7Bd2%7D%5E%7B%281%29%7D%28r%29 "\nu_{d2}^{(1)}(r)")
-</td>
-<td style="text-align:right;">
-2
-</td>
-<td style="text-align:left;">
-0.065 (0.020, 0.111)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-![\\nu\_{d1}^{(2)}(r)](https://latex.codecogs.com/png.latex?%5Cnu_%7Bd1%7D%5E%7B%282%29%7D%28r%29 "\nu_{d1}^{(2)}(r)")
-</td>
-<td style="text-align:right;">
-2
-</td>
-<td style="text-align:left;">
-0.066 (0.015, 0.118)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-![\\nu\_{d2}^{(2)}(r)](https://latex.codecogs.com/png.latex?%5Cnu_%7Bd2%7D%5E%7B%282%29%7D%28r%29 "\nu_{d2}^{(2)}(r)")
-</td>
-<td style="text-align:right;">
-2
-</td>
-<td style="text-align:left;">
-0.067 (0.017, 0.117)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-![\\lambda\_{dg}](https://latex.codecogs.com/png.latex?%5Clambda_%7Bdg%7D "\lambda_{dg}")
-</td>
-<td style="text-align:right;">
-4
-</td>
-<td style="text-align:left;">
-0.563 (0.159, 0.665)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-![\\lambda\_{dh}](https://latex.codecogs.com/png.latex?%5Clambda_%7Bdh%7D "\lambda_{dh}")
-</td>
-<td style="text-align:right;">
-6
-</td>
-<td style="text-align:left;">
-0.015 (0.010, 0.075)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-![\\sigma^2\_d](https://latex.codecogs.com/png.latex?%5Csigma%5E2_d "\sigma^2_d")
-</td>
-<td style="text-align:right;">
-2
-</td>
-<td style="text-align:left;">
-0.402 (0.297, 0.507)
-</td>
-</tr>
-<tr>
-<td style="text-align:left;">
-![\\rho\_{dW}](https://latex.codecogs.com/png.latex?%5Crho_%7BdW%7D "\rho_{dW}")
-</td>
-<td style="text-align:right;">
-2
-</td>
-<td style="text-align:left;">
-0.028 (0.022, 0.035)
-</td>
-</tr>
-</tbody>
-</table>
 
 ### Performing Bootstrapped Tests
 
