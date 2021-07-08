@@ -2,7 +2,14 @@
 output:
   github_document:
     pandoc_args: --webtex
+always_allow_html: true
 ---
+
+<style>
+.math {
+font-size: small;
+}
+</style>
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
@@ -18,7 +25,7 @@ knitr::opts_chunk$set(
 
 library(tidyverse)
 library(latex2exp)
-library(xtable)
+library(kableExtra)
 ggplot2::theme_set(
   theme_bw() + 
     theme(
@@ -40,7 +47,7 @@ set.seed(721)
 <!-- badges: start -->
 <!-- badges: end -->
 
-The `mhpca` package is a tool for conducting Multilevel Hybrid Principal Component Analysis (M-HPCA) proposed in Campos et al. (202?). This package contains the functions necessary to estimate the marginal eigenfunctions, eigenvectors, and product eigen components as well as the tools for performing inference.
+The `mhpca` package is a tool for conducting Multilevel Hybrid Principal Component Analysis (M-HPCA) proposed in Campos et al. (2021). This package contains the functions necessary to estimate the marginal eigenfunctions, eigenvectors, and product eigen components as well as the tools for performing inference.
 
 ## Installation
 
@@ -142,7 +149,7 @@ ggplot(MHPCA$eta) +
 
 #### Level 1 Marginal Eigenvectors 
 
-The level 1 marginal regional eigenvectors for Group 1 are stored in `MHPCA$marg$between$regional$'Group 1'$eigendecomp$vectors`. 
+The level 1 marginal regional eigenvectors $v_{dk}^{(1)}(r)$ for Group 1 are stored in `MHPCA$marg$between$regional$'Group 1'$eigendecomp$vectors`. 
 ```{r level-1-eigenvectors, fig.asp = 0.4}
 cowplot::plot_grid(
   data.frame(MHPCA$marg$between$regional$`Group 1`$eigendecomp$vectors[, 1:2]) %>%
@@ -181,7 +188,7 @@ cowplot::plot_grid(
 
 #### Level 2 Marignal Eigenvectors
 
-The level 2 marginal regional eigenvectors for Group 1 are stored in `MHPCA$marg$within$regional$'Group 1'$eigendecomp$vectors`. 
+The level 2 marginal regional eigenvectors $v_{dp}^{(2)}(r)$ for Group 1 are stored in `MHPCA$marg$within$regional$'Group 1'$eigendecomp$vectors`. 
 ```{r level-2-eigenvectors, fig.asp = 0.4}
 cowplot::plot_grid(
   data.frame(MHPCA$marg$within$regional$`Group 1`$eigendecomp$vectors[, 1:2]) %>% 
@@ -220,7 +227,7 @@ cowplot::plot_grid(
 
 #### Level 1 Marginal Eigenfunctions 
 
-The level 1 marginal functional eigenfunctions for Group 1 are stored in `MHPCA$marg$between$functional$'Group 1'$eigendecomp$vectors`. 
+The level 1 marginal functional eigenfunctions $\phi_{d\ell}^{(1)}(t)$ for Group 1 are stored in `MHPCA$marg$between$functional$'Group 1'$eigendecomp$vectors`. 
 ```{r level-1-eigenfunctions, fig.asp = 0.4}
 cowplot::plot_grid(
   data.frame(MHPCA$marg$between$functional$`Group 1`$eigendecomp$vectors[, 1:2]) %>%
@@ -259,7 +266,7 @@ cowplot::plot_grid(
 
 #### Level 2 Marignal Eigenfunctions
 
-The level 2 marginal functional eigenfunctions for Group 1 are stored in `MHPCA$marg$within$functional$'Group 1'$eigendecomp$vectors`. 
+The level 2 marginal functional eigenfunctions $\phi_{dm}^{(2)}(t)$ for Group 1 are stored in `MHPCA$marg$within$functional$'Group 1'$eigendecomp$vectors`. 
 ```{r level-2-eigenfunctions, fig.asp = 0.4}
 cowplot::plot_grid(
   data.frame(MHPCA$marg$within$functional$`Group 1`$eigendecomp$vectors[, 1:2]) %>% 
@@ -299,7 +306,7 @@ cowplot::plot_grid(
 ### Summary Tables 
 
 Using simulated data, we can calculate the errors of each model component and display the median, 10th percentile and 90th percentile in a table, similar to the tables provided in the paper.
-```{r error-table}
+```{r error-table, results='asis'}
 groups = unique(data$Group) 
 names(groups) = groups
 
@@ -319,7 +326,7 @@ rbind(
     estimated = MHPCA$mu,
     true = sim$mu
   ) %>% 
-    summarise(
+    summarize(
       rse = pracma::trapz(func, (estimated - true) ^ 2) / 
         pracma::trapz(true ^ 2)
     ) %>% 
@@ -345,12 +352,12 @@ rbind(
     .by = c("Group", "reg", "Repetition", "func")
   ) %>% 
     group_by(Group, Repetition, reg) %>% 
-    summarise(
+    summarize(
       rse_num = pracma::trapz(func, (estimated - true) ^ 2), 
       rse_den = pracma::trapz(true ^ 2), 
       .groups = "drop_last"
     ) %>% 
-    summarise(
+    summarize(
       rse = sum(rse_num) / sum(rse_den), 
       .groups = "drop"
     ) %>% 
@@ -552,12 +559,12 @@ rbind(
   map_dfr(groups, function(d) {
     MHPCA$data[[d]] %>%
       group_by(Repetition, Subject, reg) %>%
-      summarise(
+      summarize(
         RSE_num = pracma::trapz(unique(data$func), (predicted - y)^2),
         RSE_den = pracma::trapz(unique(data$func), y^2),
         .groups = "drop_last"
       ) %>%
-      summarise(
+      summarize(
         rse = sum(RSE_num) / sum(RSE_den),
         .groups = "drop"
       )
@@ -625,7 +632,7 @@ rbind(
     mutate(parameter = "rho")
 ) %>% 
   group_by(parameter) %>% 
-  summarise(
+  summarize(
     n = n(), 
     RSE = paste0(
       format.pval(
@@ -645,7 +652,7 @@ rbind(
   slice(match(parameter_order, parameter)) %>% 
   mutate(
     parameter = c(
-      "$\\mu(t)$", "$\\eta_{dc}(r, t)$", "$Y_{dij}(r,t)$",
+      "$\\mu(t)$", "$\\eta_{dj}(r, t)$", "$Y_{dij}(r,t)$",
       "$\\phi_{d1}^{(1)}(t)$", "$\\phi^{(1)}_{d2}(t)$",
       "$\\phi^{(2)}_{d1}(t)$", "$\\phi^{(2)}_{d2}(t)$",
       "$\\nu_{d1}^{(1)}(r)$", "$\\nu_{d2}^{(1)}(r)$",
@@ -654,14 +661,41 @@ rbind(
       "$\\rho_{dW}$"
     ), 
     .before = 1
-  )
+  ) %>% 
+  kbl(caption = "Percentiles 50\\% (10\\%, 90\\%) of the relative squared errors and normalized mean squared errors for model components based on 1 Monte Carlo run from the simulation design at $n_d = 15$ for the low noise, dense simulation.") %>% 
+  kable_styling()
 ```
 
 ### Performing Bootstrapped Tests 
 
-In order to draw group-level inference via parametric bootstrap, we can test the null hypothesis $H_0: \eta_{dj}(r, t) = \eta_{d}(r, t)$ with the following function 
+In order to draw group-level inference via parametric bootstrap, we can test the null hypothesis $H_0: \eta_{dj}(r, t) = \eta_{d}(r, t)$ with the `MHPCA_bootstrap_within` function, which performs the bootstrap sampling in parallel. To demonstrate this function under growing degrees of departure from the null, the data generation model is modified where $\eta_{1j}(r, t) = 0$ for $r \neq 1$ and $\eta_{1j}(1, t) = (-1)^j\Delta$ for $j = 1, 2$, with larger $\Delta$ representing larger deviations from the null. Data is generated using the function `MHPCA_simulation_within_group_test`
+
+```{r, eval = FALSE}
+sim = MHPCA_simulation_within_group_test(
+  sig_eps       = 0.25,    # measurement error standard deviation 
+  n_d           = 15,      # number of subjects per group
+  J             = 2,       # number of repetitions per subject
+  D             = 2,       # number of groups 
+  num_reg       = 9,       # number of regions 
+  num_time      = 50,      # number of functional time points 
+  missing_level = FALSE,   # whether or not the data should be dense or sparse
+  test_group    = 1,       # test group
+  test_region   = 1,       # test region
+  delta         = 0.06     # tuning parameter for the degree of departure from null
+)
+```
 
 ```{r within-test, eval = FALSE}
+MHPCA = MHPCA_decomp(
+  data       = sim$data, # data frame in long format 
+  fve_cutoff = 0.8,  # FVE cut-off for reducing the # of product eigen components 
+  nknots     = 5,    # number of knots for smoothing splines
+  maxiter    = 1000, # maximum iterations for MM algorithm
+  epsilon    = 1e-3, # epsilon value for determining convergence
+  reduce     = TRUE, # reduce the # of product eigen components and re-estimate model
+  quiet      = FALSE # display messages for timing 
+)
+
 boot_out = MHPCA_bootstrap_within(
   MHPCA  = MHPCA, 
   B      = 200, # number of bootstrap samples 
@@ -678,7 +712,7 @@ boot_out = MHPCA_bootstrap_within(
 
 The output of this function is a list with elements `pval` (the bootstrapped p-value for the test) and `boots` (the estimated $\overline{\eta}_{dj}^b(r, t)$ for each bootstrapped sample). 
 
-For tests between groups, we test the null hypothesis $H_0: \eta_{d_1j_1}(r, t) - \eta_{d_1j_2}(r, t) = \eta_{d_2j_1}(r, t) - \eta_{d_2j_2}(r, t)$ with the following function, which performs the bootstrap sampling in parallel. 
+For tests between groups, we test the null hypothesis $H_0: \eta_{d_1j_1}(r, t) - \eta_{d_1j_2}(r, t) = \eta_{d_2j_1}(r, t) - \eta_{d_2j_2}(r, t)$ with the `MHPCA_bootstrap_between` function, which performs the bootstrap sampling in parallel. 
 
 ```{r between-test, eval = FALSE}
 boot_out = MHPCA_bootstrap_between(

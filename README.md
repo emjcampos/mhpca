@@ -1,4 +1,9 @@
 
+<style>
+.math {
+font-size: small;
+}
+</style>
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
 # mhpca
@@ -7,7 +12,7 @@
 <!-- badges: end -->
 
 The `mhpca` package is a tool for conducting Multilevel Hybrid Principal
-Component Analysis (M-HPCA) proposed in Campos et al. (202?). This
+Component Analysis (M-HPCA) proposed in Campos et al. (2021). This
 package contains the functions necessary to estimate the marginal
 eigenfunctions, eigenvectors, and product eigen components as well as
 the tools for performing inference.
@@ -77,18 +82,18 @@ MHPCA = MHPCA_decomp(
   reduce     = TRUE, # reduce the # of product eigen components and re-estimate model
   quiet      = FALSE # display messages for timing 
 )
-#> 0. Data formatting: 0.016 sec elapsed
-#> 1. Estimation of Fixed Effects: 0.152 sec elapsed
+#> 0. Data formatting: 0.015 sec elapsed
+#> 1. Estimation of Fixed Effects: 0.148 sec elapsed
 #> 2. Estimation of Covariances
-#>     a. Raw Covariances: 0.182 sec elapsed
-#>     b,c. Estimation of Marginal Covariances and Smoothing: 0.759 sec elapsed
-#> 3. Estimation of Marginal Eigencomponents: 0.004 sec elapsed
+#>     a. Raw Covariances: 0.181 sec elapsed
+#>     b,c. Estimation of Marginal Covariances and Smoothing: 0.758 sec elapsed
+#> 3. Estimation of Marginal Eigencomponents: 0.003 sec elapsed
 #> 4. Estimation of Variance Components
-#>     a. Fit big model: 4.089 sec elapsed
+#>     a. Fit big model: 4.243 sec elapsed
 #>     b. Choose number of components: 0.034 sec elapsed
-#>     c. Final Model: 5.236 sec elapsed
-#>     d. Prediction: 0.186 sec elapsed
-#> MHPCA Decomposition and Estimation: 10.659 sec elapsed
+#>     c. Final Model: 5.256 sec elapsed
+#>     d. Prediction: 0.187 sec elapsed
+#> MHPCA Decomposition and Estimation: 10.826 sec elapsed
 ```
 
 The output of the `MHPCA_decomp` function
@@ -151,7 +156,9 @@ ggplot(MHPCA$eta) +
 
 #### Level 1 Marginal Eigenvectors
 
-The level 1 marginal regional eigenvectors for Group 1 are stored in
+The level 1 marginal regional eigenvectors
+![v\_{dk}^{(1)}(r)](https://latex.codecogs.com/png.latex?v_%7Bdk%7D%5E%7B%281%29%7D%28r%29 "v_{dk}^{(1)}(r)")
+for Group 1 are stored in
 `MHPCA$marg$between$regional$'Group 1'$eigendecomp$vectors`.
 
 ``` r
@@ -194,7 +201,9 @@ cowplot::plot_grid(
 
 #### Level 2 Marignal Eigenvectors
 
-The level 2 marginal regional eigenvectors for Group 1 are stored in
+The level 2 marginal regional eigenvectors
+![v\_{dp}^{(2)}(r)](https://latex.codecogs.com/png.latex?v_%7Bdp%7D%5E%7B%282%29%7D%28r%29 "v_{dp}^{(2)}(r)")
+for Group 1 are stored in
 `MHPCA$marg$within$regional$'Group 1'$eigendecomp$vectors`.
 
 ``` r
@@ -237,7 +246,9 @@ cowplot::plot_grid(
 
 #### Level 1 Marginal Eigenfunctions
 
-The level 1 marginal functional eigenfunctions for Group 1 are stored in
+The level 1 marginal functional eigenfunctions
+![\\phi\_{d\\ell}^{(1)}(t)](https://latex.codecogs.com/png.latex?%5Cphi_%7Bd%5Cell%7D%5E%7B%281%29%7D%28t%29 "\phi_{d\ell}^{(1)}(t)")
+for Group 1 are stored in
 `MHPCA$marg$between$functional$'Group 1'$eigendecomp$vectors`.
 
 ``` r
@@ -280,7 +291,9 @@ cowplot::plot_grid(
 
 #### Level 2 Marignal Eigenfunctions
 
-The level 2 marginal functional eigenfunctions for Group 1 are stored in
+The level 2 marginal functional eigenfunctions
+![\\phi\_{dm}^{(2)}(t)](https://latex.codecogs.com/png.latex?%5Cphi_%7Bdm%7D%5E%7B%282%29%7D%28t%29 "\phi_{dm}^{(2)}(t)")
+for Group 1 are stored in
 `MHPCA$marg$within$functional$'Group 1'$eigendecomp$vectors`.
 
 ``` r
@@ -347,7 +360,7 @@ rbind(
     estimated = MHPCA$mu,
     true = sim$mu
   ) %>% 
-    summarise(
+    summarize(
       rse = pracma::trapz(func, (estimated - true) ^ 2) / 
         pracma::trapz(true ^ 2)
     ) %>% 
@@ -373,12 +386,12 @@ rbind(
     .by = c("Group", "reg", "Repetition", "func")
   ) %>% 
     group_by(Group, Repetition, reg) %>% 
-    summarise(
+    summarize(
       rse_num = pracma::trapz(func, (estimated - true) ^ 2), 
       rse_den = pracma::trapz(true ^ 2), 
       .groups = "drop_last"
     ) %>% 
-    summarise(
+    summarize(
       rse = sum(rse_num) / sum(rse_den), 
       .groups = "drop"
     ) %>% 
@@ -580,12 +593,12 @@ rbind(
   map_dfr(groups, function(d) {
     MHPCA$data[[d]] %>%
       group_by(Repetition, Subject, reg) %>%
-      summarise(
+      summarize(
         RSE_num = pracma::trapz(unique(data$func), (predicted - y)^2),
         RSE_den = pracma::trapz(unique(data$func), y^2),
         .groups = "drop_last"
       ) %>%
-      summarise(
+      summarize(
         rse = sum(RSE_num) / sum(RSE_den),
         .groups = "drop"
       )
@@ -653,7 +666,7 @@ rbind(
     mutate(parameter = "rho")
 ) %>% 
   group_by(parameter) %>% 
-  summarise(
+  summarize(
     n = n(), 
     RSE = paste0(
       format.pval(
@@ -673,7 +686,7 @@ rbind(
   slice(match(parameter_order, parameter)) %>% 
   mutate(
     parameter = c(
-      "$\\mu(t)$", "$\\eta_{dc}(r, t)$", "$Y_{dij}(r,t)$",
+      "$\\mu(t)$", "$\\eta_{dj}(r, t)$", "$Y_{dij}(r,t)$",
       "$\\phi_{d1}^{(1)}(t)$", "$\\phi^{(1)}_{d2}(t)$",
       "$\\phi^{(2)}_{d1}(t)$", "$\\phi^{(2)}_{d2}(t)$",
       "$\\nu_{d1}^{(1)}(r)$", "$\\nu_{d2}^{(1)}(r)$",
@@ -682,35 +695,247 @@ rbind(
       "$\\rho_{dW}$"
     ), 
     .before = 1
-  )
-#> # A tibble: 15 x 3
-#>    parameter                   n RSE                    
-#>    <chr>                   <int> <chr>                  
-#>  1 "$\\mu(t)$"                 1 <0.001 (<0.001, <0.001)
-#>  2 "$\\eta_{dc}(r, t)$"        4 <0.001 (<0.001, <0.001)
-#>  3 "$Y_{dij}(r,t)$"           60 0.072 (0.032, 0.252)   
-#>  4 "$\\phi_{d1}^{(1)}(t)$"     2 <0.001 (<0.001, <0.001)
-#>  5 "$\\phi^{(1)}_{d2}(t)$"     2 0.002 (<0.001, 0.002)  
-#>  6 "$\\phi^{(2)}_{d1}(t)$"     2 <0.001 (<0.001, <0.001)
-#>  7 "$\\phi^{(2)}_{d2}(t)$"     2 <0.001 (<0.001, <0.001)
-#>  8 "$\\nu_{d1}^{(1)}(r)$"      2 0.058 (0.012, 0.104)   
-#>  9 "$\\nu_{d2}^{(1)}(r)$"      2 0.065 (0.020, 0.111)   
-#> 10 "$\\nu_{d1}^{(2)}(r)$"      2 0.066 (0.015, 0.118)   
-#> 11 "$\\nu_{d2}^{(2)}(r)$"      2 0.067 (0.017, 0.117)   
-#> 12 "$\\lambda_{dg}$"           4 0.563 (0.159, 0.665)   
-#> 13 "$\\lambda_{dh}$"           6 0.015 (0.010, 0.075)   
-#> 14 "$\\sigma^2_d$"             2 0.402 (0.297, 0.507)   
-#> 15 "$\\rho_{dW}$"              2 0.028 (0.022, 0.035)
+  ) %>% 
+  kbl(caption = "Percentiles 50\\% (10\\%, 90\\%) of the relative squared errors and normalized mean squared errors for model components based on 1 Monte Carlo run from the simulation design at $n_d = 15$ for the low noise, dense simulation.") %>% 
+  kable_styling()
 ```
+
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<caption>
+Percentiles 50% (10%, 90%) of the relative squared errors and normalized
+mean squared errors for model components based on 1 Monte Carlo run from
+the simulation design at
+![n\_d = 15](https://latex.codecogs.com/png.latex?n_d%20%3D%2015 "n_d = 15")
+for the low noise, dense simulation.
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+parameter
+</th>
+<th style="text-align:right;">
+n
+</th>
+<th style="text-align:left;">
+RSE
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+![\\mu(t)](https://latex.codecogs.com/png.latex?%5Cmu%28t%29 "\mu(t)")
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+&lt;0.001 (&lt;0.001, &lt;0.001)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+![\\eta\_{dj}(r, t)](https://latex.codecogs.com/png.latex?%5Ceta_%7Bdj%7D%28r%2C%20t%29 "\eta_{dj}(r, t)")
+</td>
+<td style="text-align:right;">
+4
+</td>
+<td style="text-align:left;">
+&lt;0.001 (&lt;0.001, &lt;0.001)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+![Y\_{dij}(r,t)](https://latex.codecogs.com/png.latex?Y_%7Bdij%7D%28r%2Ct%29 "Y_{dij}(r,t)")
+</td>
+<td style="text-align:right;">
+60
+</td>
+<td style="text-align:left;">
+0.072 (0.032, 0.252)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+![\\phi\_{d1}^{(1)}(t)](https://latex.codecogs.com/png.latex?%5Cphi_%7Bd1%7D%5E%7B%281%29%7D%28t%29 "\phi_{d1}^{(1)}(t)")
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:left;">
+&lt;0.001 (&lt;0.001, &lt;0.001)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+![\\phi^{(1)}\_{d2}(t)](https://latex.codecogs.com/png.latex?%5Cphi%5E%7B%281%29%7D_%7Bd2%7D%28t%29 "\phi^{(1)}_{d2}(t)")
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:left;">
+0.002 (&lt;0.001, 0.002)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+![\\phi^{(2)}\_{d1}(t)](https://latex.codecogs.com/png.latex?%5Cphi%5E%7B%282%29%7D_%7Bd1%7D%28t%29 "\phi^{(2)}_{d1}(t)")
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:left;">
+&lt;0.001 (&lt;0.001, &lt;0.001)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+![\\phi^{(2)}\_{d2}(t)](https://latex.codecogs.com/png.latex?%5Cphi%5E%7B%282%29%7D_%7Bd2%7D%28t%29 "\phi^{(2)}_{d2}(t)")
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:left;">
+&lt;0.001 (&lt;0.001, &lt;0.001)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+![\\nu\_{d1}^{(1)}(r)](https://latex.codecogs.com/png.latex?%5Cnu_%7Bd1%7D%5E%7B%281%29%7D%28r%29 "\nu_{d1}^{(1)}(r)")
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:left;">
+0.058 (0.012, 0.104)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+![\\nu\_{d2}^{(1)}(r)](https://latex.codecogs.com/png.latex?%5Cnu_%7Bd2%7D%5E%7B%281%29%7D%28r%29 "\nu_{d2}^{(1)}(r)")
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:left;">
+0.065 (0.020, 0.111)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+![\\nu\_{d1}^{(2)}(r)](https://latex.codecogs.com/png.latex?%5Cnu_%7Bd1%7D%5E%7B%282%29%7D%28r%29 "\nu_{d1}^{(2)}(r)")
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:left;">
+0.066 (0.015, 0.118)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+![\\nu\_{d2}^{(2)}(r)](https://latex.codecogs.com/png.latex?%5Cnu_%7Bd2%7D%5E%7B%282%29%7D%28r%29 "\nu_{d2}^{(2)}(r)")
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:left;">
+0.067 (0.017, 0.117)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+![\\lambda\_{dg}](https://latex.codecogs.com/png.latex?%5Clambda_%7Bdg%7D "\lambda_{dg}")
+</td>
+<td style="text-align:right;">
+4
+</td>
+<td style="text-align:left;">
+0.563 (0.159, 0.665)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+![\\lambda\_{dh}](https://latex.codecogs.com/png.latex?%5Clambda_%7Bdh%7D "\lambda_{dh}")
+</td>
+<td style="text-align:right;">
+6
+</td>
+<td style="text-align:left;">
+0.015 (0.010, 0.075)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+![\\sigma^2\_d](https://latex.codecogs.com/png.latex?%5Csigma%5E2_d "\sigma^2_d")
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:left;">
+0.402 (0.297, 0.507)
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+![\\rho\_{dW}](https://latex.codecogs.com/png.latex?%5Crho_%7BdW%7D "\rho_{dW}")
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:left;">
+0.028 (0.022, 0.035)
+</td>
+</tr>
+</tbody>
+</table>
 
 ### Performing Bootstrapped Tests
 
 In order to draw group-level inference via parametric bootstrap, we can
 test the null hypothesis
 ![H\_0: \\eta\_{dj}(r, t) = \\eta\_{d}(r, t)](https://latex.codecogs.com/png.latex?H_0%3A%20%5Ceta_%7Bdj%7D%28r%2C%20t%29%20%3D%20%5Ceta_%7Bd%7D%28r%2C%20t%29 "H_0: \eta_{dj}(r, t) = \eta_{d}(r, t)")
-with the following function
+with the `MHPCA_bootstrap_within` function, which performs the bootstrap
+sampling in parallel. To demonstrate this function under growing degrees
+of departure from the null, the data generation model is modified where
+![\\eta\_{1j}(r, t) = 0](https://latex.codecogs.com/png.latex?%5Ceta_%7B1j%7D%28r%2C%20t%29%20%3D%200 "\eta_{1j}(r, t) = 0")
+for
+![r \\neq 1](https://latex.codecogs.com/png.latex?r%20%5Cneq%201 "r \neq 1")
+and
+![\\eta\_{1j}(1, t) = (-1)^j\\Delta](https://latex.codecogs.com/png.latex?%5Ceta_%7B1j%7D%281%2C%20t%29%20%3D%20%28-1%29%5Ej%5CDelta "\eta_{1j}(1, t) = (-1)^j\Delta")
+for
+![j = 1, 2](https://latex.codecogs.com/png.latex?j%20%3D%201%2C%202 "j = 1, 2"),
+with larger
+![\\Delta](https://latex.codecogs.com/png.latex?%5CDelta "\Delta")
+representing larger deviations from the null. Data is generated using
+the function `MHPCA_simulation_within_group_test`
 
 ``` r
+sim = MHPCA_simulation_within_group_test(
+  sig_eps       = 0.25,    # measurement error standard deviation 
+  n_d           = 15,      # number of subjects per group
+  J             = 2,       # number of repetitions per subject
+  D             = 2,       # number of groups 
+  num_reg       = 9,       # number of regions 
+  num_time      = 50,      # number of functional time points 
+  missing_level = FALSE,   # whether or not the data should be dense or sparse
+  test_group    = 1,       # test group
+  test_region   = 1,       # test region
+  delta         = 0.06     # tuning parameter for the degree of departure from null
+)
+```
+
+``` r
+MHPCA = MHPCA_decomp(
+  data       = sim$data, # data frame in long format 
+  fve_cutoff = 0.8,  # FVE cut-off for reducing the # of product eigen components 
+  nknots     = 5,    # number of knots for smoothing splines
+  maxiter    = 1000, # maximum iterations for MM algorithm
+  epsilon    = 1e-3, # epsilon value for determining convergence
+  reduce     = TRUE, # reduce the # of product eigen components and re-estimate model
+  quiet      = FALSE # display messages for timing 
+)
+
 boot_out = MHPCA_bootstrap_within(
   MHPCA  = MHPCA, 
   B      = 200, # number of bootstrap samples 
@@ -732,8 +957,8 @@ for each bootstrapped sample).
 
 For tests between groups, we test the null hypothesis
 ![H\_0: \\eta\_{d\_1j\_1}(r, t) - \\eta\_{d\_1j\_2}(r, t) = \\eta\_{d\_2j\_1}(r, t) - \\eta\_{d\_2j\_2}(r, t)](https://latex.codecogs.com/png.latex?H_0%3A%20%5Ceta_%7Bd_1j_1%7D%28r%2C%20t%29%20-%20%5Ceta_%7Bd_1j_2%7D%28r%2C%20t%29%20%3D%20%5Ceta_%7Bd_2j_1%7D%28r%2C%20t%29%20-%20%5Ceta_%7Bd_2j_2%7D%28r%2C%20t%29 "H_0: \eta_{d_1j_1}(r, t) - \eta_{d_1j_2}(r, t) = \eta_{d_2j_1}(r, t) - \eta_{d_2j_2}(r, t)")
-with the following function, which performs the bootstrap sampling in
-parallel.
+with the `MHPCA_bootstrap_between` function, which performs the
+bootstrap sampling in parallel.
 
 ``` r
 boot_out = MHPCA_bootstrap_between(

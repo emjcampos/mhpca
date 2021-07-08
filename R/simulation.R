@@ -325,6 +325,8 @@ MHPCA_simulation <- function(
 #' @importFrom purrr map pmap_dfr
 #' @importFrom stats rnorm var
 #' @importFrom stringr str_pad str_length
+#'
+#' @export
 MHPCA_simulation_within_group_test <- function(
   sig_eps, n_d, J, D, num_reg, num_time, missing_level = FALSE,
   test_group, test_region, delta
