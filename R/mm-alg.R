@@ -478,7 +478,7 @@ mm_incomplete = function(MHPCA, group, maxiter, epsilon) {
       rownames(zeta_i[[k]][[i]]) = colnames(Phi1)
       xi_i[[k]][[i]]   = Matrix::kronecker(I_J[[J]], Lambda2[[k]]) %*%
         Matrix::crossprod(w_i[[i]], omegainv_y[[i]])
-      rownames(xi_i[[k]][[i]]) = rep(colnames(Phi2), each = J)
+      rownames(xi_i[[k]][[i]]) = rep(colnames(Phi2), times = J)
       y_sum     = y_sum + Matrix::crossprod(omegainv_y[[i]])
       trace_sum = trace_sum + sum(Matrix::diag(omega_inv[[length_j_i[[i]]]]))
     }
